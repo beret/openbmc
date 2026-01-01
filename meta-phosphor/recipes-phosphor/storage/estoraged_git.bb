@@ -9,7 +9,7 @@ DEPENDS += "openssl"
 DEPENDS += "phosphor-logging"
 DEPENDS += "sdbusplus"
 DEPENDS += "stdplus"
-SRCREV = "9066ff65e9a3dd6322d984eae02d44443551ae3e"
+SRCREV = "da5aa614090fbd22399db85ec8866353c4c22d9c"
 PV = "0.1+git${SRCPV}"
 PR = "r1"
 
@@ -24,3 +24,4 @@ inherit meson pkgconfig systemd
 EXTRA_OEMESON = "-Dtests=disabled"
 
 RDEPENDS:${PN} += "e2fsprogs"
+RDEPENDS:${PN} += "e2fsprogs-e2fsck"

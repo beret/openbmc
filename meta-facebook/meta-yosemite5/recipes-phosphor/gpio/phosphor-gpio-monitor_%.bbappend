@@ -9,6 +9,15 @@ SRC_URI += "file://yosemite5-phosphor-multi-gpio-monitor.json \
             file://multi-gpios-sys-init.service \
             file://assert-host-ready.service \
             file://deassert-host-ready.service \
+            file://assert-power-good-drop \
+            file://assert-power-good-drop.service \
+            file://deassert-power-good-drop \
+            file://deassert-power-good-drop.service \
+            file://gpio_bypass \
+            file://gpio_bypass@.service \
+            file://thermal-event-logger \
+            file://thermal-assert-log@.service \
+            file://thermal-deassert-log@.service \
             "
 
 RDEPENDS:${PN}:append = " bash"
@@ -20,6 +29,11 @@ SYSTEMD_SERVICE:${PN} += " \
     multi-gpios-sys-init.service \
     assert-host-ready.service \
     deassert-host-ready.service \
+    assert-power-good-drop.service \
+    deassert-power-good-drop.service \
+    gpio_bypass@.service \
+    thermal-assert-log@.service \
+    thermal-deassert-log@.service \
     "
 
 SYSTEMD_AUTO_ENABLE = "enable"
@@ -34,7 +48,11 @@ do_install:append:() {
 
     install -d ${D}${libexecdir}/${PN}
     install -m 0755 ${UNPACKDIR}/reset_btn ${D}${libexecdir}/${PN}/
+    install -m 0755 ${UNPACKDIR}/gpio_bypass ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/multi-gpios-sys-init ${D}${libexecdir}/${PN}/
+    install -m 0755 ${UNPACKDIR}/thermal-event-logger ${D}${libexecdir}/${PN}/
+    install -m 0755 ${UNPACKDIR}/assert-power-good-drop ${D}${libexecdir}/${PN}/
+    install -m 0755 ${UNPACKDIR}/deassert-power-good-drop ${D}${libexecdir}/${PN}/
 }
 
 SYSTEMD_OVERRIDE:${PN}-monitor += "phosphor-multi-gpio-monitor.conf:phosphor-multi-gpio-monitor.service.d/phosphor-multi-gpio-monitor.conf"
