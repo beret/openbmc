@@ -15,7 +15,6 @@ PACKAGECONFIG:remove = " \
 "
 
 EXTRA_OEMESON:append:ibm-enterprise = " \
-    -Dvm-websocket=disabled \
     -Dhypervisor-computer-system=enabled \
 "
 
@@ -26,11 +25,7 @@ EXTRA_OEMESON:append:sbp1 = " \
 PACKAGECONFIG:remove:ibm-enterprise = " \
     kvm \
     mutual-tls-auth \
-"
-
-# Witherspoon doesn't have the space for the both zstd and xz compression
-PACKAGECONFIG:remove:witherspoon = " \
-    http-zstd \
+    vm-websocket \
 "
 
 PACKAGECONFIG:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'redundant-bmc', 'redundant-bmc', '', d)}"

@@ -8,11 +8,9 @@ DEPENDS = " \
     "
 
 PV = "1.0+git${SRCPV}"
-SRCREV = "043d5f4b4f95d9f2a4f8182850ed0e6f2b076b15"
+SRCREV = "b5fa948036741b3ffc68bdbf8904d5030cb41e2e"
 
 SRC_URI = "git://github.com/openbmc/libcper.git;protocol=https;branch=main"
-
-S = "${WORKDIR}/git"
 
 inherit pkgconfig meson ptest
 

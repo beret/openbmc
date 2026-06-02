@@ -199,7 +199,11 @@ gbmc_br_gw_src_update() {
       fi
     done
     (( new_len >= 16 )) && continue
-    if [[ "$new_src" == "$primary_ip" ]]; then
+    local rt_metric=4096  # Use a default that will be recognized as invalid
+    if [[ "$route" =~ ' metric '([^ ]+) ]]; then
+      rt_metric="${BASH_REMATCH[1]}"
+    fi
+    if (( rt_metric <= 1536 )) && [[ "$new_src" == "$primary_ip" ]]; then
       # Add primary src ip for the GW
       gbmc_br_config_primary_ip "$route src $new_src" "replace"
     fi
@@ -224,6 +228,10 @@ gbmc_br_gw_src_hook() {
     [[ $route == *" metric $primary_rt_metric "* ]] && return
     # ignore RA from systemd on standard RA
     [[ $route == *" proto ra "* && $route == *" dev l2br "* ]] && return
+    # ignore dead route and linkdown route
+    [[ $route == *" dead "* ]] && return
+    [[ $route == *" linkdown "* ]] && return
+
     if [[ $route =~ ^(.*)( +expires +[^ ]+)(.*)$ ]]; then
       route="${BASH_REMATCH[1]}${BASH_REMATCH[3]}"
     fi

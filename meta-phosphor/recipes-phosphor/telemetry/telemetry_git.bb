@@ -9,12 +9,11 @@ DEPENDS = "boost \
            phosphor-logging \
            sdbusplus \
            systemd"
-SRCREV = "40cdd51040e50ec55517fe8f49e8df290fc950b0"
+SRCREV = "7918474af32c85f31ca423814df95f7d782e6eea"
 PV = "1.0+git${SRCPV}"
 
 SRC_URI = "git://github.com/openbmc/telemetry;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_SERVICE:${PN} = "xyz.openbmc_project.Telemetry.service"
 
 inherit pkgconfig meson

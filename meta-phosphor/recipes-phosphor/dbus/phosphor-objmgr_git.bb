@@ -9,7 +9,7 @@ DEPENDS += "libtinyxml2"
 DEPENDS += "sdbusplus"
 DEPENDS += "phosphor-logging"
 DEPENDS += "cli11"
-SRCREV = "3622f519135a79cc10737196e61a3c8d6ea516a3"
+SRCREV = "62ad8a8767872a85f60351cde019c94c450a19b7"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
@@ -23,7 +23,6 @@ SYSTEMD_SERVICE:${PN} += " \
         mapper-subtree-remove@.service \
         xyz.openbmc_project.ObjectMapper.service \
         "
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig systemd
 

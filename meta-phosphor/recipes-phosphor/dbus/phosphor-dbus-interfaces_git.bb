@@ -7,13 +7,11 @@ DEPENDS += " \
         sdbusplus \
         systemd \
         "
-SRCREV = "af6b2cce7d97159360f292889f759e7739f6a0a4"
+SRCREV = "147616e8c5f1ec82d711c04947a0e6b677e225a5"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-dbus-interfaces;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit pkgconfig meson
 inherit obmc-phosphor-utils

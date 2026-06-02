@@ -14,7 +14,7 @@ inherit ${FIT_IMAGE_INHERIT}
 
 # Image composition
 FLASH_KERNEL_IMAGE ?= "fitImage-${INITRAMFS_IMAGE}-${MACHINE}-${MACHINE}"
-FLASH_KERNEL_IMAGE:df-obmc-ubi-fs ?= "fitImage-${MACHINE}.bin"
+FLASH_KERNEL_IMAGE:df-obmc-ubi-fs ?= "zImage-${MACHINE}.bin"
 
 IMAGE_BASETYPE ?= "squashfs-xz"
 IMAGE_BASETYPE:df-obmc-static-norootfs ?= "cpio"
@@ -291,7 +291,8 @@ python do_generate_static() {
         bb.debug(1, 'Spanning start=' + str(start_kb) + 'K end=' + str(finish_kb) + 'K')
         bb.debug(1, 'Compare needed=' + str(imgsize) + ' available=' + str(maxsize) + ' margin=' + str(maxsize - imgsize))
         if imgsize > maxsize:
-            bb.fatal("Image '%s' is %d bytes too large!" % (imgpath, imgsize - maxsize))
+            bb.fatal("Image size error: '%s' is %d bytes, exceeds allowed %d bytes (over by %d bytes)" % (
+                imgpath, imgsize, maxsize, imgsize - maxsize))
 
         subprocess.check_call(['dd', 'bs=1k', 'conv=notrunc',
                                'seek=%d' % start_kb,
@@ -352,6 +353,7 @@ do_generate_static[depends] += " \
         ${PN}:do_image_${@d.getVar('IMAGE_BASETYPE', True).replace('-', '_')} \
         virtual/kernel:do_deploy \
         u-boot:do_deploy \
+        ${@'linux-yocto-fitimage:do_deploy' if d.getVar('INITRAMFS_IMAGE') else ''} \
         "
 
 make_signatures() {
