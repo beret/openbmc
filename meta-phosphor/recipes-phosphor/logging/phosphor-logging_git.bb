@@ -20,7 +20,7 @@ DEPENDS += " \
     systemd \
     virtual/phosphor-logging-callouts \
     "
-SRCREV = "acdea22a78ae43f4f88995bb34b02533dcfc6129"
+SRCREV = "18f37e0b433da260f9add7599d6033fc3d02674d"
 PACKAGECONFIG ??= ""
 PACKAGECONFIG[openpower-pels] = " \
         -Dopenpower-pel-extension=enabled, \
@@ -28,13 +28,19 @@ PACKAGECONFIG[openpower-pels] = " \
         libpldm python3, \
         python3, \
         "
+PACKAGECONFIG[redundant-bmc] = " \
+        -Dredundant-bmc=true, \
+        -Dredundant-bmc=false \
+        "
+
+PACKAGECONFIG:append = " ${@bb.utils.contains('MACHINE_FEATURES', 'redundant-bmc', 'redundant-bmc', '', d)}"
+
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-logging;branch=master;protocol=https"
 
 SYSTEMD_PACKAGES = "${LOGGING_PACKAGES}"
-S = "${WORKDIR}/git"
 
 inherit pkgconfig meson
 inherit python3native

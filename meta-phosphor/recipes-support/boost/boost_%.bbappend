@@ -11,7 +11,9 @@ PACKAGECONFIG:openbmc-phosphor:class-target = ""
 #https://github.com/openbmc/docs/blob/master/cpp-style-and-conventions.md#boost
 #
 BOOST_LIBS:openbmc-phosphor:class-target = " \
+    atomic \
     chrono \
+    container \
     context \
     coroutine \
     date_time \
@@ -30,6 +32,7 @@ BOOST_LIBS:openbmc-phosphor:class-target = " \
 # by categorizing it as a dev dependency
 FILES:${PN}-dev:append = " \
     ${libdir}/libboost_system*.so.* \
+    ${libdir}/libboost_regex*.so.* \
 "
 
 BJAM_OPTS:append = " boost.process.fs=std"

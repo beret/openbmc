@@ -1,17 +1,16 @@
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
-inherit allarch systemd obmc-phosphor-systemd
+inherit allarch
+inherit systemd
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 RDEPENDS:${PN} += "bash"
 RDEPENDS:${PN} += "libgpiod-tools"
 RDEPENDS:${PN} += "fb-common-functions"
 
 SRC_URI += " \
-    file://gpio_util \
     file://ventura-sys-init.service \
     file://ventura-early-sys-init \
     file://ventura-schematic-init \
@@ -27,11 +26,17 @@ SYSTEMD_SERVICE:${PN}:append = " \
     ventura-fan-status-monitor.service \
     "
 
+FILES:${PN} += "${systemd_system_unitdir}/*"
+
 do_install() {
     VENTURA_LIBEXECDIR="${D}${libexecdir}/ventura"
     install -d ${VENTURA_LIBEXECDIR}
-    install -m 0755 ${UNPACKDIR}/gpio_util ${VENTURA_LIBEXECDIR}
     install -m 0755 ${UNPACKDIR}/ventura-early-sys-init ${VENTURA_LIBEXECDIR}
     install -m 0755 ${UNPACKDIR}/ventura-schematic-init ${VENTURA_LIBEXECDIR}
     install -m 0755 ${UNPACKDIR}/ventura-fan-status-monitor ${D}${libexecdir}
+
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ventura-sys-init.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ventura-schematic-init.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ventura-fan-status-monitor.service ${D}${systemd_system_unitdir}
 }

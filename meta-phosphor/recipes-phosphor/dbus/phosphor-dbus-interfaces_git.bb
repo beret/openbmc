@@ -7,13 +7,11 @@ DEPENDS += " \
         sdbusplus \
         systemd \
         "
-SRCREV = "af6b2cce7d97159360f292889f759e7739f6a0a4"
+SRCREV = "a2b3be88687eb8d4c52a016975f8ff33679dc088"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-dbus-interfaces;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit pkgconfig meson
 inherit obmc-phosphor-utils
@@ -47,4 +45,4 @@ do_write_config:append() {
 # The write-config needs to happen after the unpack and patch steps.
 # Unpack is what creates the original source.  Someone could apply patches to
 # the repository that affects meson.options.
-do_write_config[depends] += "${PN}:do_unpack ${PN}:do_patch"
+addtask write_config after do_unpack do_patch before do_configure

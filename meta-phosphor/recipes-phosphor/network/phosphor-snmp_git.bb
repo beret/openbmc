@@ -8,13 +8,11 @@ DEPENDS += "sdbusplus ${PYTHON_PN}-sdbus++-native"
 DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "phosphor-logging"
 DEPENDS += "net-snmp"
-SRCREV = "2b27b9618a5f6d1c5f27e696c8fdf9d592963917"
+SRCREV = "17ab4d9b3b2f74f4c7f862e848df09725dfd611d"
 PV = "0.1+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-snmp;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 inherit python3native

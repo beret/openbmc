@@ -1,13 +1,12 @@
-SUMMARY = "Phosphor OpenBMC pre-init scripts for mmc"
-DESCRIPTION = "Phosphor OpenBMC filesystem mount implementation for mmc."
+SUMMARY = "Phosphor OpenBMC pre-init scripts for eMMC/UFS"
+DESCRIPTION = "Phosphor OpenBMC filesystem mount implementation for eMMC/UFS."
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 PR = "r1"
 
 SRC_URI += "file://mmc-init.sh"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 inherit allarch
 
@@ -22,10 +21,10 @@ RDEPENDS:${PN} += " \
     ${VIRTUAL-RUNTIME_base-utils} \
     e2fsprogs-e2fsck \
     e2fsprogs-mke2fs \
-    gptfdisk \
     libgpiod-tools \
     parted \
     udev \
+    util-linux \
 "
 
 FILES:${PN} += " /init /dev "

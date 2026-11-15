@@ -4,13 +4,11 @@ HOMEPAGE = "http://github.com/openbmc/pam-ipmi"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 DEPENDS += "openssl libpam"
-SRCREV = "dff839f1b376ee4e0853c4127aab1e0e9443ed66"
+SRCREV = "ee3d6e81090cc258a181c85f1cc7eb3ac1362270"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/pam-ipmi;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 
@@ -18,4 +16,12 @@ FILES:${PN} += " \
                ${base_libdir}/security/ \
                ${sysconfdir}/key_file \
                ${sysconfdir}/ipmi_pass \
+               ${sysconfdir}/pam.d/ipmi \
                "
+
+SRC_URI += "file://pam.d/ipmi"
+
+do_install:append() {
+    install -d ${D}${sysconfdir}/pam.d
+    install -m 0644 ${UNPACKDIR}/pam.d/ipmi ${D}${sysconfdir}/pam.d/ipmi
+}

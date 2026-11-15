@@ -2,6 +2,10 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 SRC_URI:remove:df-openpower = "file://${BPN}.conf"
 SRC_URI:append:df-openpower = " file://server.ttyVUART0.conf"
+SRC_URI:append:mf-redundant-bmc = " file://obmc-console-server-start-pre.conf"
+SRC_URI:append:mf-redundant-bmc = " file://obmc-console-prep-log-name"
+
+RDEPENDS:${PN} += "bash"
 
 install_concurrent_console_config() {
         # Install configuration for the servers and clients. Keep commandline
@@ -25,9 +29,28 @@ install_concurrent_console_config() {
         # Install configuration for remaining servers - the base recipe
         # installs the configuration for the first.
         install -m 0644 ${UNPACKDIR}/server.ttyVUART1.conf ${D}${sysconfdir}/${BPN}/
+
+        # Install the services in the multi-user.target
+        install -m 0644 -d ${D}${systemd_unitdir}/system/multi-user.target.wants
+        ln -s ../obmc-console-ssh@.service ${D}${systemd_unitdir}/system/multi-user.target.wants/obmc-console-ssh@2200.service
+        ln -s ../obmc-console-ssh@.service ${D}${systemd_unitdir}/system/multi-user.target.wants/obmc-console-ssh@2201.service
+}
+
+do_install:append:mf-redundant-bmc() {
+        # patch the obmc-console server service
+        override_dir=${D}${systemd_system_unitdir}/obmc-console@.service.d
+        install -d ${override_dir}
+        install -m 0644 ${UNPACKDIR}/obmc-console-server-start-pre.conf \
+                ${override_dir}/obmc-console-server-start-pre.conf
+
+        # Added script to insert bmc position in the log file name
+        install -d ${D}${libexecdir}
+        install -m 0755 ${UNPACKDIR}/obmc-console-prep-log-name ${D}${libexecdir}/
 }
 
 SRC_URI:append:ibm-enterprise = " file://client.2201.conf"
+SRC_URI:append:ibm-enterprise = " file://dropbear.2200.env"
+SRC_URI:append:ibm-enterprise = " file://dropbear.2201.env"
 SRC_URI:append:ibm-enterprise = " file://server.ttyVUART1.conf"
 
 REGISTERED_SERVICES:${PN}:append:ibm-enterprise = " obmc_console_hypervisor:tcp:2201:"
@@ -43,6 +66,9 @@ PACKAGECONFIG:append:ibm-enterprise = " concurrent-servers"
 
 do_install:append:ibm-enterprise() {
         install_concurrent_console_config
+        # Install per-port idle timeout overrides (dropbear.%i.env pattern)
+        install -m 0644 ${UNPACKDIR}/dropbear.2200.env ${D}${sysconfdir}/obmc-console/dropbear.2200.env
+        install -m 0644 ${UNPACKDIR}/dropbear.2201.env ${D}${sysconfdir}/obmc-console/dropbear.2201.env
 }
 
 SRC_URI:append:sbp1 = " file://server.ttyVUART0.conf"

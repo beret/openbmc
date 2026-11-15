@@ -19,3 +19,13 @@ OBMC_IMAGE_EXTRA_INSTALL:append = " \
 OBMC_IMAGE_EXTRA_INSTALL:append = " \
     fan-init \
 "
+
+# Anapaca platform services
+OBMC_IMAGE_EXTRA_INSTALL:append = " \
+    plat-svc \
+"
+
+# Enable neard for NFC tag discovery.
+OBMC_IMAGE_EXTRA_INSTALL:append = " \
+    neard \
+"

@@ -8,8 +8,9 @@ DEPENDS += " \
     sdeventplus \
     phosphor-dbus-interfaces \
     phosphor-logging \
+    libgpiod \
     "
-SRCREV = "fbd3bd5d584e83f9f5febf5a457c39d76882ed2b"
+SRCREV = "9827866ef17c13bb9de5f492639a02d4a8e58f88"
 PACKAGECONFIG ??= "signals handler"
 PACKAGECONFIG[signals] = ",,gpioplus nlohmann-json,"
 PACKAGECONFIG[handler] = ",,,${VIRTUAL-RUNTIME_obmc-host-state-manager} ${VIRTUAL-RUNTIME_obmc-chassis-state-manager}"
@@ -17,8 +18,6 @@ PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-buttons.git;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 SYSTEMD_PACKAGES = "${BUTTON_PACKAGES}"
 SYSTEMD_SERVICE:${PN}-signals = "xyz.openbmc_project.Chassis.Buttons.service"

@@ -1,10 +1,9 @@
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://${COREBASE}/meta/files/common-licenses/Apache-2.0;md5=89aea4e17d99a7cacdbeed46a0096b10"
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
-RDEPENDS:${PN} += " bash libgpiod-tools"
+RDEPENDS:${PN} += " bash libgpiod-tools fb-common-functions"
 
 SRC_URI += " \
     file://yosemite5-common-functions \

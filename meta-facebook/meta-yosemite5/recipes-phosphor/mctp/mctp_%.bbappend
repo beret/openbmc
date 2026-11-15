@@ -1,18 +1,19 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
+inherit systemd
+
 SRC_URI:append = " \
     file://mctp_init.service \
     file://mctp_init.sh \
-    file://mctp_remove.service \
-    file://mctp_setup.service \
+    file://mctp_remove@.service \
     file://mctp_setup@.service \
     file://mctp_setup.sh \
 "
 
 SYSTEMD_SERVICE:${PN}:append = " \
     mctp_init.service \
-    mctp_setup.service \
-    mctp_remove.service \
+    mctp_remove@.service \
+    mctp_setup@.service \
 "
 
 RDEPENDS:${PN}:append = "bash"

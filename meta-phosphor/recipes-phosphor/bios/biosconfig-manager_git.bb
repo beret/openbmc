@@ -14,13 +14,12 @@ DEPENDS = " boost \
             phosphor-logging \
             sdbusplus \
             systemd "
-SRCREV = "168413fc0d02cfc047f9ca9535ecfb193644f7ed"
+SRCREV = "23805a57e27e6444d637ade1053d89c37ca1df18"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/bios-settings-mgr;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_SERVICE:${PN} = "xyz.openbmc_project.biosconfig_manager.service"
 
 inherit meson pkgconfig systemd

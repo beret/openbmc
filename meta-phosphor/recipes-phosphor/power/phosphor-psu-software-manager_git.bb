@@ -10,13 +10,12 @@ DEPENDS = " \
          sdbusplus \
          openssl \
          "
-SRCREV = "eab6742fc7b22b653e46939799780fb39435454b"
+SRCREV = "548daeecd89285ee2b94a6ce6e361d27f62664ff"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-psu-code-mgmt;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_SERVICE:${PN} = "xyz.openbmc_project.Software.Psu.Updater.service"
 SYSTEMD_SERVICE:${PN} += "psu-update@.service"
 

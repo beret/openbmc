@@ -10,7 +10,7 @@ DEPENDS += " \
     phosphor-dbus-interfaces \
     phosphor-logging \
     "
-SRCREV = "ac4cb328365c7073a54da815c7f2362f1c64bf01"
+SRCREV = "d8e6f47fe645d8c6f4781b89f7c7f19945566d9c"
 
 PACKAGECONFIG[smbios-no-dimm] = "-Ddimm-dbus=disabled,-Ddimm-dbus=enabled"
 PACKAGECONFIG[cpuinfo] = "-Dcpuinfo=enabled,-Dcpuinfo=disabled,i2c-tools"
@@ -22,13 +22,13 @@ PACKAGECONFIG[firmware-inventory-dbus] = "-Dfirmware-inventory-dbus=enabled,-Dfi
 PACKAGECONFIG[expose-firmware-component-name] = "-Dexpose-firmware-component-name=enabled,-Dexpose-firmware-component-name=disabled"
 PACKAGECONFIG[slot-drive-presence] = "-Dslot-drive-presence=enabled,-Dslot-drive-presence=disabled"
 PACKAGECONFIG[dimm-only-locator] = "-Ddimm-only-locator=enabled,-Ddimm-only-locator=disabled"
+PACKAGECONFIG[pcie-device-dbus] = "-Dpcie-device-dbus=enabled,-Dpcie-device-dbus=disabled"
 
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/smbios-mdr.git;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_SERVICE:${PN} += "smbios-mdrv2.service"
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'cpuinfo', 'xyz.openbmc_project.cpuinfo.service', '', d)}"
 

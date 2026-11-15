@@ -6,7 +6,6 @@ DESCRIPTION = "\
  libpam-ldapd packages but is not very useful by itself. \
  "
 HOMEPAGE = "https://github.com/arthurdejong/nss-pam-ldapd"
-S = "${WORKDIR}/git"
 SECTION = "base"
 LICENSE = "LGPL-2.1-or-later"
 LIC_FILES_CHKSUM = "file://COPYING;md5=fbc093901857fcd118f065f900982c24"
@@ -41,7 +40,7 @@ do_install:append() {
         install -m 0644 ${UNPACKDIR}/nslcd.service ${D}${systemd_system_unitdir}
 }
 
-RDEPENDS:${PN} += "nscd"
+RRECOMMENDS:${PN} += "nscd"
 
 FILES:${PN} += "${base_libdir}/security ${datadir}"
 FILES:${PN}-dbg += "${base_libdir}/security/.debug"

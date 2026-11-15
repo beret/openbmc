@@ -8,13 +8,11 @@ DEPENDS += " \
   fmt \
   liburing \
   "
-SRCREV = "38af2d8b75cf158f61934bb010673185bfca6117"
+SRCREV = "9b9648d459c0b42fe5fee4cb92e47c0e28050e9e"
 PV = "0.1+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/stdplus;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 

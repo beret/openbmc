@@ -7,14 +7,12 @@ DEPENDS += "sdbusplus"
 DEPENDS += "phosphor-logging"
 DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "systemd"
-SRCREV = "2e6614668ae19c5dc7e26fb87f9fe529a31819f1"
+SRCREV = "27ff229be5741d5157d0a4f345692930dc42cf74"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-user-manager;branch=master;protocol=https"
 SRC_URI += "file://upgrade_hostconsole_group.sh"
-
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 inherit obmc-phosphor-dbus-service
@@ -27,8 +25,13 @@ PACKAGECONFIG ?= " \
     ${@bb.utils.filter('DISTRO_FEATURES', 'ldap', d)} \
     "
 PACKAGECONFIG[root-user-mgmt] = "-Droot_user_mgmt=enabled, -Droot_user_mgmt=disabled"
+PACKAGECONFIG:remove:df-phosphor-no-root-login = "root-user-mgmt"
 PACKAGECONFIG[ldap] = "-Dldap=enabled, -Dldap=disabled, nss-pam-ldapd"
 
+PREDEFINED_GROUPS = "redfish,ssh,hostconsole"
+PREDEFINED_GROUPS:append = "${@bb.utils.contains('DISTRO_FEATURES', 'phosphor-no-ipmi-rmcp', '', ',ipmi', d)}"
+
+EXTRA_OEMESON += "-Dpredefined_groups=${PREDEFINED_GROUPS}"
 
 do_install:append() {
   install -d ${D}${libexecdir}

@@ -1,9 +1,12 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-inherit obmc-phosphor-systemd systemd
+inherit systemd
 
 SRC_URI += "file://yosemite4-phosphor-multi-gpio-monitor.json \
             file://configure-nic-mctp-endpoint \
+            file://rescan-fru-nic \
+            file://rescan-fru-nic-remove@.service \
+            file://rescan-fru-nic-add@.service \
             file://setup-nic-endpoint-slot@.service \
             file://remove-nic-endpoint-slot@.service \
             file://set-button-sled.service \
@@ -53,6 +56,8 @@ SYSTEMD_SERVICE:${PN} += " \
     slot-hot-plug@.service \
     setup-nic-endpoint-slot@.service \
     remove-nic-endpoint-slot@.service \
+    rescan-fru-nic-remove@.service \
+    rescan-fru-nic-add@.service \
     rescan-wf-bic@.service \
     slot-hsc-fault@.service \
     fan-board-efuse-fault@.service \
@@ -73,6 +78,8 @@ do_install:append() {
     install -d ${D}${datadir}/phosphor-gpio-monitor
     install -m 0644 ${UNPACKDIR}/yosemite4-phosphor-multi-gpio-monitor.json \
                     ${D}${datadir}/phosphor-gpio-monitor/phosphor-multi-gpio-monitor.json
+
+    install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/set-button-sled.service ${D}${systemd_system_unitdir}/set-button-sled.service
     install -m 0644 ${UNPACKDIR}/probe-slot-device@.service ${D}${systemd_system_unitdir}/probe-slot-device@.service
     install -m 0644 ${UNPACKDIR}/rescan-fru-ocp-setting@.service ${D}${systemd_system_unitdir}/rescan-fru-ocp-setting@.service
@@ -80,6 +87,8 @@ do_install:append() {
     install -m 0644 ${UNPACKDIR}/setup-nic-endpoint-slot@.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/reconfig-net-interface@.service  ${D}${systemd_system_unitdir}/reconfig-net-interface@.service
     install -m 0644 ${UNPACKDIR}/remove-nic-endpoint-slot@.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${UNPACKDIR}/rescan-fru-nic-remove@.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${UNPACKDIR}/rescan-fru-nic-add@.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/rescan-wf-bic@.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/slot-hsc-fault@.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/fan-board-efuse-fault@.service ${D}${systemd_system_unitdir}/
@@ -93,10 +102,12 @@ do_install:append() {
     install -m 0644 ${UNPACKDIR}/medusa-hsc-fault@.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/medusa-power-module-fault.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${UNPACKDIR}/medusa-power-module-pwrgd@.service ${D}${systemd_system_unitdir}/
+
     install -d ${D}${libexecdir}/${PN}
     install -m 0755 ${UNPACKDIR}/probe-slot-device ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/reconfig-net-interface ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/rescan-fru-ocp-setting ${D}${libexecdir}/${PN}/
+    install -m 0755 ${UNPACKDIR}/rescan-fru-nic ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/rescan-wf-bic ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/slot-hsc-fault ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/fan-board-efuse-fault ${D}${libexecdir}/${PN}/
@@ -110,6 +121,7 @@ do_install:append() {
     install -m 0755 ${UNPACKDIR}/medusa-hsc-fault ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/medusa-power-module-fault ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/medusa-power-module-pwrgd ${D}${libexecdir}/${PN}/
-    install -d ${D}/${bindir}
-    install -m 0755 ${UNPACKDIR}/configure-nic-mctp-endpoint ${D}/${bindir}/
+
+    install -d ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/configure-nic-mctp-endpoint ${D}${bindir}/
 }

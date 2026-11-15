@@ -9,13 +9,11 @@ DEPENDS += "systemd"
 DEPENDS += "phosphor-dbus-interfaces"
 DEPENDS += "boost"
 DEPENDS += "phosphor-logging"
-SRCREV = "80126038a7045e3d0c09ac51432049aac43d3a5f"
+SRCREV = "4117851cf63b45c987aa79ae9ccd1b5b94f6d64d"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-led-sysfs;branch=master;protocol=https"
-
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 inherit obmc-phosphor-dbus-service

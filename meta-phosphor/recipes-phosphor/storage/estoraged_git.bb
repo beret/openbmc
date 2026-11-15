@@ -9,13 +9,12 @@ DEPENDS += "openssl"
 DEPENDS += "phosphor-logging"
 DEPENDS += "sdbusplus"
 DEPENDS += "stdplus"
-SRCREV = "da5aa614090fbd22399db85ec8866353c4c22d9c"
+SRCREV = "3b45c228407ce6b583823ce5585028457b0361f9"
 PV = "0.1+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/estoraged.git;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE:${PN} += "xyz.openbmc_project.eStoraged.service"
 

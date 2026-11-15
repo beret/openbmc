@@ -15,6 +15,9 @@
 
 [ -n "${gbmc_ncsi_dynamic_lib-}" ] && return
 
+# shellcheck source=meta-google/recipes-google/networking/gbmc-net-common/gbmc-net-lib.sh
+source /usr/share/gbmc-net-lib.sh || exit
+
 # shellcheck disable=SC2034
 declare -A gbmc_br_dhcrelay_linkaddrs
 
@@ -23,7 +26,7 @@ gbmc_ncsi_dynamic_hook() {
   local -n numaddrs=gbmc_br_dhcrelay_linkaddrs["$intf"]
   # shellcheck disable=SC2154
   if [[ "$change" = 'link' && "$action" = 'add' ]]; then
-    ip link show "$intf" | grep -q '^ *alias ncsi-usb$' || return
+    ip link show "$intf" | grep -q '^ *alias ncsi-usb-side$' || return
     echo "NCSI USB Link Add $intf" >&2
 
 read -r -d '' contents <<EOF
@@ -51,20 +54,18 @@ EOF
     local rfile=/run/nftables/50-gbmc-ncsi-"$intf".rules
     mkdir -p "$(dirname "$rfile")"
     printf '%s' "$contents" >"$rfile"
-    # shellcheck disable=SC2015
-    systemctl reset-failed nftables && systemctl --no-block reload-or-restart nftables || true
+    gbmc_net_nftables_reload || true
 
     systemctl start --no-block gbmc-ncsi-ra@"$intf"
     numaddrs=${numaddrs-0}
   elif [[ "$change" = 'link' && "$action" = 'del' ]]; then
     [[ -n "${numaddrs-}" ]] || return 0
     echo "NCSI USB Link Del $intf" >&2
-    # shellcheck disable=SC2015
-    rm /run/nftables/50-gbmc-ncsi-"$intf".rules 2>/dev/null && \
-      systemctl reset-failed nftables && \
-      systemctl --no-block reload-or-restart nftables || true
+    if rm /run/nftables/50-gbmc-ncsi-"$intf".rules 2>/dev/null; then
+      gbmc_net_nftables_reload || true
+    fi
     systemctl stop --no-block gbmc-ncsi-ra@"$intf" || true
-    systemctl stop --no-block gbmc-br-dhcrelay@"$intf" || true
+    rm -f /run/gbmc-br-dhcrelay/uppers/"$intf"
     unset numaddrs
   fi
 }

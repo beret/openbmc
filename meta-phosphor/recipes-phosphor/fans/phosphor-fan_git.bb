@@ -13,6 +13,8 @@ DEPENDS += "libevdev"
 DEPENDS += "nlohmann-json"
 DEPENDS += "cli11"
 PACKAGECONFIG ?= "presence control monitor sensor-monitor"
+# multi-chassis fan apps options
+PACKAGECONFIG[multi-chassis] = "-Dmulti-chassis=enabled,-Dmulti-chassis=disabled"
 # The control, monitor, and presence apps can either be JSON or YAML driven.
 PACKAGECONFIG[json] = "-Djson-config=enabled, -Djson-config=disabled"
 # --------------------------------------
@@ -60,15 +62,13 @@ PACKAGECONFIG[sensor-monitor] = "-Dsensor-monitor-service=enabled,-Dsensor-monit
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
-S = "${WORKDIR}/git"
-
 # OBMC_CHASSIS_ZERO_ONLY: hacky way to fix the templates until
 # openbmc/phosphor-fan-presence#26 is resolved.  This should likely be
 # returned to OBMC_CHASSIS_INSTANCES.
 OBMC_CHASSIS_ZERO_ONLY = "0"
 
 SYSTEMD_PACKAGES = "${FAN_PACKAGES}"
-SYSTEMD_SERVICE:${PN}-presence-tach += "${TMPL_TACH}"
+SYSTEMD_SERVICE:${PN}-presence-tach += "${@bb.utils.contains('PACKAGECONFIG', 'presence', '${TMPL_TACH}', '', d)}"
 SYSTEMD_LINK:${PN}-presence-tach += "${@compose_list(d, 'FMT_TACH', 'OBMC_CHASSIS_ZERO_ONLY')}"
 # JSON mode also gets linked into multi-user
 SYSTEMD_LINK:${PN}-presence-tach += "${@bb.utils.contains('PACKAGECONFIG', 'json', \

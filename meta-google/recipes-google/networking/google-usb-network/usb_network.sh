@@ -28,6 +28,8 @@ ARGUMENT_LIST=(
     "dev-type:"
     "gadget-dir-name:"
     "iface-name:"
+    "iface-alias:"
+    "no-bridge:"
 )
 
 print_usage() {
@@ -42,6 +44,8 @@ $0 [OPTIONS] [stop|start]
         --bind-device Name of the device to bind, as listed in /sys/class/udc/
         --gadget-dir-name Optional base name for gadget directory. Default: iface-name
         --iface-name name of the network interface.
+        --iface-alias alias name of the network interface.
+        --no-bridge don't bridge the usb link.
         --help  Print this help and exit.
 HELP
 }
@@ -54,8 +58,18 @@ gadget_start() {
 Name=${IFACE_NAME}
 EOF
 
+    if [[ -n $IFACE_ALIAS ]]; then
+        cat >/run/systemd/network/+-bmc-"${IFACE_NAME}".link <<EOF
+[Match]
+OriginalName=${IFACE_NAME}
+
+[Link]
+Alias=${IFACE_ALIAS}
+EOF
+    fi
+
     # Add the gbmcbr configuration if this is a relevant device
-    if (( ID_VENDOR == 0x18d1 && ID_PRODUCT == 0x22b )); then
+    if (( ID_VENDOR == 0x18d1 && ID_PRODUCT == 0x22b && NO_BRIDGE == 0 )); then
         cat >>/run/systemd/network/+-bmc-"${IFACE_NAME}".network <<EOF
 [Network]
 Bridge=gbmcbr
@@ -65,7 +79,7 @@ EOF
     fi
 
     # Add standard l2 bridge configuration if this is a relevant device
-    if (( ID_VENDOR == 0x18d1 && ID_PRODUCT == 0x22c )); then
+    if (( ID_VENDOR == 0x18d1 && ID_PRODUCT == 0x22c && NO_BRIDGE == 0 )); then
         cat >>/run/systemd/network/+-bmc-"${IFACE_NAME}".network <<EOF
 [Network]
 Bridge=l2br
@@ -121,6 +135,10 @@ EOF
             ip link set dev "$ifname" name "${IFACE_NAME}" && break
         sleep 1
     done
+    if [[ -n $IFACE_ALIAS ]]; then
+        ip link set dev "$IFACE_NAME" alias "$IFACE_ALIAS" || return
+    fi
+
     ip link set dev "$IFACE_NAME" up || return
 }
 
@@ -134,6 +152,7 @@ gadget_stop() {
       "${gadget_dir}" || true
 
     rm -f /run/systemd/network/+-bmc-"${IFACE_NAME}".network
+    rm -f /run/systemd/network/+-bmc-"${IFACE_NAME}".link
     # shellcheck disable=SC2119
     gbmc_net_networkd_reload || true
 }
@@ -159,6 +178,7 @@ BIND_DEVICE=""
 ACTION="start"
 GADGET_DIR_NAME=""
 IFACE_NAME=""
+NO_BRIDGE=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --product-id)
@@ -193,6 +213,14 @@ while [[ $# -gt 0 ]]; do
             IFACE_NAME=$2
             shift 2
             ;;
+        --iface-alias)
+            IFACE_ALIAS=$2
+            shift 2
+            ;;
+        --no-bridge)
+            NO_BRIDGE=$2
+            shift 2
+            ;;
         --help)
             print_usage
             exit 0
@@ -219,6 +247,22 @@ done
 if [ -z "$GADGET_DIR_NAME" ]; then
     GADGET_DIR_NAME="$IFACE_NAME"
 fi
+
+validate_safe_string() {
+    local name="$1"
+    local val="$2"
+    if [[ -n $val ]]; then
+        if [[ ! "$val" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "Error: Invalid $name: '$val'. Only alphanumeric, _, and - are allowed." >&2
+            exit 1
+        fi
+    fi
+}
+
+validate_safe_string "iface-name" "$IFACE_NAME"
+validate_safe_string "gadget-dir-name" "$GADGET_DIR_NAME"
+validate_safe_string "dev-type" "$DEV_TYPE"
+
 
 if [[ $ACTION == "stop" ]]; then
     gadget_stop

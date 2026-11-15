@@ -7,14 +7,13 @@ DEPENDS += "phosphor-logging"
 DEPENDS += "sdbusplus"
 DEPENDS += "cli11"
 PROVIDES += "virtual/obmc-host-ipmi-hw"
-SRCREV = "53d76975b49443da877a15d66106119b7133bcbf"
+SRCREV = "9a72d35376b02197000141fb920d93ab7d79dceb"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/ssifbridge.git;protocol=https;branch=master"
 
 SYSTEMD_SERVICE:${PN} = "ssifbridge.service"
-S = "${WORKDIR}/git"
 
 inherit meson pkgconfig
 inherit systemd

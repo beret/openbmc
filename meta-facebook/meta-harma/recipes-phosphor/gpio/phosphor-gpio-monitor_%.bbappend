@@ -1,6 +1,6 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
-inherit obmc-phosphor-systemd systemd
+inherit systemd
 
 SRC_URI += "file://assert-post-end \
             file://assert-post-end.service \
@@ -13,7 +13,6 @@ SRC_URI += "file://assert-post-end \
             file://auto-poweroff@.service \
             file://auto-poweron \
             file://auto-poweron@.service \
-            file://deassert-post-end \
             file://deassert-post-end.service \
             file://deassert-power-good \
             file://deassert-power-good.service \
@@ -32,6 +31,7 @@ SRC_URI += "file://assert-post-end \
             file://initial-poweron-device \
             file://initial-poweron-device.service \
             file://logging-util \
+            file://mmc-recovery \
             file://mmc-recovery.service \
             file://multi-gpios-sys-init \
             file://multi-gpios-sys-init.service \
@@ -52,6 +52,7 @@ SRC_URI += "file://assert-post-end \
             file://vr-fault-assert-log@.service \
             file://vr-fault-deassert-log@.service \
             file://vr-fault-event-logger \
+            file://phosphor-multi-gpio-monitor.conf \
             "
 
 RDEPENDS:${PN}:append = " bash"
@@ -108,7 +109,6 @@ do_install:append() {
     install -m 0755 ${UNPACKDIR}/deassert-reset-button ${D}${libexecdir}/${PN}/
 
     install -m 0755 ${UNPACKDIR}/assert-post-end ${D}${libexecdir}/${PN}/
-    install -m 0755 ${UNPACKDIR}/deassert-post-end ${D}${libexecdir}/${PN}/
 
     install -m 0755 ${UNPACKDIR}/assert-power-good ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/deassert-power-good ${D}${libexecdir}/${PN}/
@@ -124,6 +124,9 @@ do_install:append() {
 
     install -m 0755 ${UNPACKDIR}/fan-reload ${D}${libexecdir}/${PN}/
     install -m 0755 ${UNPACKDIR}/initial-poweron-device ${D}${libexecdir}/${PN}/
-}
+    install -m 0755 ${UNPACKDIR}/mmc-recovery ${D}${libexecdir}/${PN}/
 
-SYSTEMD_OVERRIDE:${PN}-monitor += "phosphor-multi-gpio-monitor.conf:phosphor-multi-gpio-monitor.service.d/phosphor-multi-gpio-monitor.conf"
+    install -d ${D}${systemd_system_unitdir}/phosphor-multi-gpio-monitor.service.d
+    install -m 0644 ${UNPACKDIR}/phosphor-multi-gpio-monitor.conf \
+        ${D}${systemd_system_unitdir}/phosphor-multi-gpio-monitor.service.d/phosphor-multi-gpio-monitor.conf
+}

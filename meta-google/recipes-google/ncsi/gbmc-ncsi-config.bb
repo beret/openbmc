@@ -12,10 +12,9 @@ GBMC_NCSI_DHCP_IMPERSONATE_HOST ??= "1"
 
 SRC_URI += " \
   file://50-gbmc-ncsi.rules.in \
-  ${@'' if d.getVar('GBMC_DHCP_RELAY') != '1' else 'file://10-ncsi-dhcrelay.conf'} \
   ${@'' if d.getVar('GBMC_DHCP_RELAY') != '1' else 'file://gbmc-ncsi-dhcrelay.sh.in'} \
   file://gbmc-ncsi-ra@.service \
-  file://gbmc-ncsi-ra.sh \
+  file://gbmc-ncsi-ra.sh.in \
   file://gbmc-ncsi-smartnic-wa.sh.in \
   file://gbmc-ncsi-sslh.socket.in \
   file://gbmc-ncsi-sslh.service \
@@ -35,8 +34,7 @@ SRC_URI += " \
   file://00-ncsi.conf \
   "
 
-S = "${WORKDIR}/sources"
-UNPACKDIR = "${S}"
+S = "${UNPACKDIR}"
 
 RDEPENDS:${PN} += " \
   bash \
@@ -134,11 +132,9 @@ do_install:append() {
     >${D}${systemd_system_unitdir}/gbmc-ncsi-networkd-wait.target
 
   if [ "${GBMC_DHCP_RELAY}" = "1" ]; then
-    install -d -m0755 ${D}${systemd_system_unitdir}/gbmc-br-dhcrelay@"$if_name".service.d
-    install -m0644 ${UNPACKDIR}/10-ncsi-dhcrelay.conf ${D}${systemd_system_unitdir}/gbmc-br-dhcrelay@"$if_name".service.d/
     sed "s,@NCSI_IF@,$if_name,g" ${UNPACKDIR}/gbmc-ncsi-dhcrelay.sh.in \
-      >${UNPACKDIR}/gbmc-ncsi-dhcrelay.sh
-    install -m0644 ${UNPACKDIR}/gbmc-ncsi-dhcrelay.sh $mondir/
+      >${WORKDIR}/gbmc-ncsi-dhcrelay.sh
+    install -m0644 ${WORKDIR}/gbmc-ncsi-dhcrelay.sh $mondir/
   fi
 
   if [ -n "${GBMC_NCSI_IF_OLD}" ]; then
@@ -153,7 +149,8 @@ do_install:append() {
 
   install -m0644 ${UNPACKDIR}/gbmc-ncsi-ra@.service ${D}${systemd_system_unitdir}
   install -d -m0755 ${D}${libexecdir}
-  install -m0755 ${UNPACKDIR}/gbmc-ncsi-ra.sh ${D}${libexecdir}/
+  sed "s,@NCSI_IF@,$if_name,g" ${UNPACKDIR}/gbmc-ncsi-ra.sh.in >${WORKDIR}/gbmc-ncsi-ra.sh
+  install -m0755 ${WORKDIR}/gbmc-ncsi-ra.sh ${D}${libexecdir}/
 
   sed -e "s,@NCSI_IF@,$if_name,g" -e "s,@GBMC_DHCP_RELAY@,${GBMC_DHCP_RELAY},g" \
     ${UNPACKDIR}/gbmc-ncsi-smartnic-wa.sh.in >${UNPACKDIR}/gbmc-ncsi-smartnic-wa.sh
