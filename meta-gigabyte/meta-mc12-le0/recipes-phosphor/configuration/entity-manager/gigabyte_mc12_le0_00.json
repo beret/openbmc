@@ -115,8 +115,8 @@
     {
       "Connector": {
         "Name": "SYS_FAN3 Connector",
-        "Pwm": 1,
-        "Tachs": [1],
+        "Pwm": 5,
+        "Tachs": [5],
         "PwmName": "SYS_FAN3_PWM"
       },
 
@@ -128,8 +128,8 @@
     {
       "Connector": {
         "Name": "SYS_FAN5 Connector",
-        "Pwm": 5,
-        "Tachs": [5],
+        "Pwm": 6,
+        "Tachs": [6],
         "PwmName": "SYS_FAN5_PWM"
       },
 
