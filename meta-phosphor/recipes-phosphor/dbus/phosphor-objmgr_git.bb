@@ -9,13 +9,16 @@ DEPENDS += "libtinyxml2"
 DEPENDS += "sdbusplus"
 DEPENDS += "phosphor-logging"
 DEPENDS += "cli11"
-SRCREV = "cd0264d92aacfce7c64018721c1326650069a4ba"
+SRCREV = "14658a9854eeda1def8ea95863dabf4c6f3d833a"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/phosphor-objmgr;branch=master;protocol=https"
 
-PACKAGECONFIG ??= ""
+PACKAGECONFIG ??= " \
+        mappertool \
+        "
+PACKAGECONFIG[mappertool] = "-Dmappertool=enabled,-Dmappertool=disabled"
 PACKAGECONFIG[unit-failure-monitor] = "-Dunit-failure-monitor=enabled,-Dunit-failure-monitor=disabled,,"
 
 SYSTEMD_SERVICE:${PN} += " \
