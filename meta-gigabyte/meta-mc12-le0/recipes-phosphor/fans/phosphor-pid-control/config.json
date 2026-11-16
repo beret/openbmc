@@ -3,48 +3,48 @@
     {
       "name": "CPU_FAN",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm0",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm0",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm1",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm1",
       "min": 0,
       "max": 255
     },
     {
-      "name": "FAN_SYS1",
+      "name": "SYS_FAN1",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm3",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm3",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm3",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm3",
       "min": 0,
       "max": 255
     },
     {
-      "name": "FAN_SYS2",
+      "name": "SYS_FAN2",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm4",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm4",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm4",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm4",
       "min": 0,
       "max": 255
     },
     {
       "name": "SYS_FAN3",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm6",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm6",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm6",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm6",
       "min": 0,
       "max": 255
     },
     {
       "name": "SYS_FAN4",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm5",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm5",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm5",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm5",
       "min": 0,
       "max": 255
     },
     {
       "name": "SYS_FAN5",
       "type": "fan",
-      "readPath": "/sys/class/hwmon/hwmon0/pwm7",
-      "writePath": "/sys/class/hwmon/hwmon0/pwm7",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm7",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm7",
       "min": 0,
       "max": 255
     },
@@ -54,26 +54,28 @@
       "readPath": "/xyz/openbmc_project/sensors/temperature/CPU_1",
       "ignoreDbusMinMax": true,
       "timeout": 0,
-      "unavailableAsFailed": false
+      "unavailableAsFailed": true
     }
   ],
   "zones": [
     {
       "id": 1,
-      "minThermalOutput": 0.0,
-      "failsafePercent": 90.0,
+      "minThermalOutput": 25.0,
+      "failsafePercent": 100.0,
+      "cycleIntervalTimeMS": 100,
+      "updateThermalsTimeMS": 1000,
       "pids": [
         {
-          "name": "Fan1-5",
+          "name": "Fans",
           "type": "fan",
-          "inputs": ["SYS_FAN1", "SYS_FAN2", "SYS_FAN3", "SYS_FAN4", "SYS_FAN5"],
+          "inputs": ["CPU_FAN", "SYS_FAN1", "SYS_FAN2", "SYS_FAN3", "SYS_FAN4", "SYS_FAN5"],
           "setpoint": 128.0,
           "pid": {
-            "samplePeriod": 0.5,
-            "proportionalCoeff": 10.0,
-            "integralCoeff": 2.0,
+            "samplePeriod": 0.1,
+            "proportionalCoeff": 0.0,
+            "integralCoeff": 0.0,
             "feedFwdOffsetCoeff": 0.0,
-            "feedFwdGainCoeff": 0.0,
+            "feedFwdGainCoeff": 1.0,
             "integralLimit_min": 0.0,
             "integralLimit_max": 0.0,
             "outLim_min": 0.0,
@@ -85,7 +87,7 @@
         {
           "name": "temp1",
           "type": "stepwise",
-          "inputs": ["CPU_1"],
+          "inputs": ["CPU"],
           "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
@@ -102,13 +104,13 @@
               "6": 95
             },
             "output": {
-              "0": 25,
-              "1": 50,
-              "2": 75,
-              "3": 100,
-              "4": 150,
-              "5": 200,
-              "6": 255
+              "0": 10,
+              "1": 20,
+              "2": 30,
+              "3": 40,
+              "4": 60,
+              "5": 80,
+              "6": 100
             }
           }
         }
