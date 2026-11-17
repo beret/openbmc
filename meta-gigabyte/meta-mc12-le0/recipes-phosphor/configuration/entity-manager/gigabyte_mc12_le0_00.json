@@ -137,6 +137,27 @@
       "Name": "SYS_FAN5",
       "PowerState": "On",
       "Type": "AspeedFan"
+    },
+    {
+      "Index": 3,
+      "Name": "A_VDDPS5",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
+    },
+    {
+      "Index": 5,
+      "Name": "VCORE",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
+    },
+    {
+      "Index": 6,
+      "Name": "P1V2_VDDQ",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
     }
   ],
   "Name": "Gigabyte MC12-LE0-00",
