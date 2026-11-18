@@ -208,6 +208,7 @@
           "name": "temp_passive",
           "type": "stepwise",
           "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN"],
+          "setpoint": 30.0,
           "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN"],
           "pid": {
             "samplePeriod": 0.5,
@@ -238,6 +239,7 @@
           "name": "temp_cpu",
           "type": "stepwise",
           "inputs": ["CPU"],
+          "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
             "positiveHysteresis": 1.0,
