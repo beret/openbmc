@@ -25,6 +25,12 @@
       "Type": "TMP75"
     },
     {
+      "Address": "0x28",
+      "Bus": "14",
+      "Name": "RT_M2M",
+      "Type": "NCT7802"
+    },
+    {
       "Address": "0x4c",
       "Bus": "2",
       "Name": "CPU_1",
