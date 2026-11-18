@@ -348,6 +348,12 @@ DTS nodes of UARTs with status=”disabled”' ??? */
                         // M.2 thermistor; the driver leaves remote channels
                         // disabled unless the channel is described here, and a
                         // disabled channel means no temp1_input at all.
+                        //
+                        // Mode naming is inverted from what the datasheet
+                        // suggests: "thermal-diode" maps to RTD_MODE_CURRENT
+                        // (register 0x22 bit pair = 0b01) and reads the input
+                        // as open (124.875 C) on this board. "thermistor" maps
+                        // to 0b10, which reads the M.2 at ~31 C.
                         nct7802@28 {
                                 compatible = "nuvoton,nct7802";
                                 reg = <0x28>;
@@ -357,7 +363,7 @@ DTS nodes of UARTs with status=”disabled”' ??? */
                                 channel@1 {
                                         reg = <1>;
                                         sensor-type = "temperature";
-                                        temperature-mode = "thermal-diode";
+                                        temperature-mode = "thermistor";
                                 };
                         };
                 };
