@@ -9,6 +9,18 @@
                     "DutyOn": 50,
                     "Period": 1000,
                     "Priority": "Blink"
+                },
+                {
+                    "Name": "led_front_status_green",
+                    "Action": "On",
+                    "DutyOn": 50,
+                    "Period": 0,
+                    "Priority": "Off"
+                },
+                {
+                    "Name": "led_front_status_amber",
+                    "Action": "Off",
+                    "Priority": "Blink"
                 }
             ]
         },
@@ -25,6 +37,23 @@
                     "DutyOn": 50,
                     "Period": 0,
                     "Priority": "On"
+                }
+            ]
+        },
+        {
+            "group": "enclosure_fault",
+            "members": [
+                {
+                    "Name": "led_front_status_green",
+                    "Action": "Off",
+                    "Priority": "Off"
+                },
+                {
+                    "Name": "led_front_status_amber",
+                    "Action": "Blink",
+                    "DutyOn": 50,
+                    "Period": 1000,
+                    "Priority": "Blink"
                 }
             ]
         }
