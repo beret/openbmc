@@ -69,6 +69,13 @@ Relevant pins from the board layout (section 10):
 | 19 | ID Button | GPIO134 / Q6 `id-button` |
 | 23 | NMI Switch | GPIO29 / D5 `control-nmi` |
 
+The status pair is driven differentially: the stock `set_fault_led()` states
+are green = G2 low / G3 high, amber = G2 high / G3 low, off = both high.
+That suits a reverse-parallel bicolor LED. A single-colour LED across FP_1
+8/10 only conducts in one direction: it lights for the green state and is
+reverse-biased for amber. The visible fault indication is then green turning
+off, not an amber blink.
+
 ## OpenBMC behaviour
 
 - `bmc_booted`:
