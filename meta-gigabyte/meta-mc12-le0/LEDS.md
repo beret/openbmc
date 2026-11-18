@@ -69,12 +69,41 @@ Relevant pins from the board layout (section 10):
 | 19 | ID Button | GPIO134 / Q6 `id-button` |
 | 23 | NMI Switch | GPIO29 / D5 `control-nmi` |
 
-The status pair is driven differentially: the stock `set_fault_led()` states
-are green = G2 low / G3 high, amber = G2 high / G3 low, off = both high.
-That suits a reverse-parallel bicolor LED. A single-colour LED across FP_1
-8/10 only conducts in one direction: it lights for the green state and is
-reverse-biased for amber. The visible fault indication is then green turning
-off, not an amber blink.
+## Status LED drive
+
+FP_1 pins 8/10 are a two-wire differential pair, driven by the stock
+`set_fault_led()` states:
+
+| State | G2 (50) | G3 (51) | Bicolor result |
+| --- | ---: | ---: | --- |
+| green solid | 0 | 1 | green |
+| green blink | toggles | 1 | green blinks |
+| amber solid | 1 | 0 | amber |
+| amber blink | 1 | toggles | amber blinks |
+| off | 1 | 1 | off |
+
+This matches a reverse-parallel bicolor LED: one die conducts G3 → G2
+(green), the other G2 → G3 (amber). All GPIOs are active-low, and the board
+provides the series current limiting.
+
+### Single-colour LED workaround
+
+A single-colour LED can be connected across 8/10. It has one die, so it
+conducts in one direction only: it lights for one state and is
+reverse-biased for the other. Choose the polarity for the state you want
+visible (normally green: G2 low / G3 high) and treat the dark state as the
+opposite indication. It cannot display both green and amber.
+
+Reverse bias is the GPIO high level, about 3.3 V, below the usual 5 V LED
+reverse-voltage rating, so a standard LED is not expected to be damaged.
+Verify Vr for an unknown LED; if it is below 3.3 V, add an anti-parallel
+diode or use a bicolor LED. Forward current is set by the board's series
+resistor, so an extra series resistor only reduces brightness.
+
+With the current groups, `enclosure_fault` sets green Off and amber Blink;
+on a single-colour LED that means the LED goes dark for the fault, and the
+amber blink is invisible. Driving G2 as the fault blink would give a visible
+blink but would depart from the stock green/amber mapping.
 
 ## OpenBMC behaviour
 
