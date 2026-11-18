@@ -2,6 +2,7 @@ FILESEXTRAPATHS:append := ":${THISDIR}/${PN}"
 SRC_URI:append = " \
         file://blacklist.json \
         file://gigabyte_mc12_le0_00.json \
+        file://0001-fru-device-decode-both-Gigabyte-NIC-MACs.patch \
     "
 
 do_install:append() {
