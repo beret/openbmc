@@ -34,6 +34,30 @@
                         label = "led-rear-id";
                         gpios = <&gpio 49 GPIO_ACTIVE_LOW>;
                 };
+
+                // GPIOG0 is the stock firmware's "live" LED: led_init()
+                // drives it and led_routine() toggles it once userspace is
+                // up. Keep it steady during boot; the bmc_booted LED group
+                // switches it to a 1 Hz blink after multi-user.target.
+                led-heartbeat {
+                        label = "led-bmc-heartbeat";
+                        gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
+
+                // FP_1 pins 8/10: bicolor system status LED.
+                // Stock firmware names them LED_ST_G (50) and LED_ST_A (51),
+                // and drives them low for green/amber.
+                led-status-green {
+                        label = "led-front-status-green";
+                        gpios = <&gpio 50 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
+
+                led-status-amber {
+                        label = "led-front-status-amber";
+                        gpios = <&gpio 51 GPIO_ACTIVE_LOW>;
+                };
         };
 
 
