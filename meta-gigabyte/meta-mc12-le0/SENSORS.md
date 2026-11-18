@@ -33,8 +33,9 @@ Addresses in the stock column are **8-bit** as written in the vendor map
 | `A_VDD18S5` | 0x4d | 13 | 1.8 V | — | **not published**: divider ratio unknown |
 
 The six unpublished rails are readable as raw millivolts; what is missing is
-the board divider ratio. `meta-amd` daytonax's OpenBMC config uses (`0.112` 12 V, `0.272` 5 V, `0.411` 3.3 V, `0.750` 1.8 V). Those land near the
-back-solved values for on a test board, when assuming the board is at normal rail voltages.
+the board divider ratio. `meta-amd` daytonax's OpenBMC config uses (`0.112` 12 V, 
+`0.272` 5 V, `0.411` 3.3 V, `0.750` 1.8 V). Those are similar to the back-solved values
+on a test board, when assuming the board is at normal rail voltages.
 
 ## Fans and PWM
 
@@ -56,7 +57,7 @@ all six outputs per fan policy.
 
 | Stock name | no | Source | OpenBMC | State |
 | --- | --- | --- | --- | --- |
-| `APML_CAPPING` | 0x180 | SB-RMI, i2c2 `0x78` | `sbrmi@3c` (hwmon, unpublished) | Untested, but when available sysfs should show.|
+| `APML_CAPPING` | 0x180 | SB-RMI, i2c2 `0x78` | `sbrmi@3c` (hwmon, unpublished) | untested|
 | `APML_PWR` | 0x182 | SB-RMI, same device | - | same |
 | `CPU_INFO` | 0x100 | SB-RMI CPUID window | — | - |
 | `PS1_Status` | 0xE6 | PMBus, i2c3 `0xB0` | — | not implemented |
@@ -64,13 +65,16 @@ all six outputs per fan policy.
 | `PSU1_POWER` | 0x108 | PMBus cmd `0x97`, `0xB0` | — | not implemented |
 | `PSU2_POWER` | 0x109 | PMBus cmd `0x97`, `0xB2` | — | not implemented |
 
-SB-RMI is largely for EPYC CPUs, but this support was in stock BMC, so the modules are enabled in this build just in case.
+SB-RMI is largely for EPYC CPUs, but this support was in stock BMC, so the modules are
+enabled in this build just in case. When available sysfs should show, but this is not
+wired to `entity-manager` or similar. 
 
 
-PMBus is on the board and requires compatible PSUs, untested. The stock map polls two PMBus
-addresses on `i2c-3`, so two supplies can share that bus.
+PMBus is on the board and requires compatible PSUs, untested. The stock map polls two
+PMBus addresses on `i2c-3`, so two supplies can share that bus.
 
-Kernel module and userspace tools already include PMBus support from base `aspeed_g6_defconfig`, but endpoints are not configured. 
+Kernel module and userspace tools already include PMBus support from base
+`aspeed_g6_defconfig`, but endpoints are not configured. 
 
 ## Discrete / Not a Sensor
 
@@ -106,8 +110,8 @@ cannot be expressed as Entity Manager temperature or voltage entries.
   `MINUS` operation over two sources: the temperature itself
   (`APML_CPU`, SB-TSI) and `APML_CPU_INFO` (SB-RMI CPU metadata). So it is a
   subtraction against the CPU-reported offset (Tctl offset on AMD, Tjmax on
-  Intel.) Two consequences: the value needs
-  SB-RMI, which is not present on most AM4 CPUs, and it may duplicate `CPU_1` when offset is 0/null.
+  Intel.) Two consequences: the value needs SB-RMI, which is not present on most AM4
+  CPUs, and it may duplicate `CPU_1` when offset is 0/null.
 - **`DIMMG0_TEMP`** is an aggregate: stock polls eight SPD addresses
   (`0x18`–`0x1F`) and publishes the maximum.
 - **`A_VDDPS5`** is the SoC/VDDP rail (stock SDR template `P_VDDCR`); **`VCORE`**
