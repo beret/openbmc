@@ -15,8 +15,10 @@ the host logged:
 Track the global enables byte so Get reflects Set, and accept Clear
 Message Flags as a no-op because Get Message Flags always reports zero.
 
-This is cosmetic/compliance only: OpenBMC does not gate host interrupts
-on the bit and Linux already compensates for the old behavior.
+This is a generic phosphor-host-ipmid gap, not platform-specific: any
+OpenBMC BMC running the stock daemon over KCS/BT answers the same way.
+Cosmetic/compliance only; OpenBMC does not gate host interrupts on the
+bit and Linux already compensates.
 
 Upstream-Status: Pending
 
