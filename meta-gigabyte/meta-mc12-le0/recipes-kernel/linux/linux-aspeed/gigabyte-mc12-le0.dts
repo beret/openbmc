@@ -34,6 +34,16 @@
                         label = "led-rear-id";
                         gpios = <&gpio 49 GPIO_ACTIVE_LOW>;
                 };
+
+                // GPIOG0 is the stock firmware's "live" LED: led_init()
+                // drives it and led_routine() toggles it once userspace is
+                // up. Keep it steady during boot; the bmc_booted LED group
+                // switches it to a 1 Hz blink after multi-user.target.
+                led-heartbeat {
+                        label = "led-bmc-heartbeat";
+                        gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
         };
 
 

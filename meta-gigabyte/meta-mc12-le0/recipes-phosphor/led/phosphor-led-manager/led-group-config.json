@@ -2,7 +2,15 @@
     "leds": [
         {
             "group": "bmc_booted",
-            "members": []
+            "members": [
+                {
+                    "Name": "led_bmc_heartbeat",
+                    "Action": "Blink",
+                    "DutyOn": 50,
+                    "Period": 1000,
+                    "Priority": "Blink"
+                }
+            ]
         },
         {
             "group": "power_on",
