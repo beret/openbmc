@@ -1,0 +1,44 @@
+From 47ac29d77a47d3976668683cf99b59f09c2ed623 Mon Sep 17 00:00:00 2001
+From: Oh My Pi Harness <omp@example.invalid>
+Date: Sat, 21 Nov 2026 01:24:13 -0700
+Subject: [PATCH] chassishandler: accept commit-write in the boot option
+ handshake
+
+A Set System Boot Options parameter write is bracketed with the 'Set In
+Progress' parameter: set in progress (1), commit write (2), set complete
+(0).  The handler rejected every transition out of 'set in progress'
+except 'set complete', so a conforming client received 0x81 for the
+commit write.  Clients that stop at the first error leave the parameter
+open, and their next attempt is rejected as a concurrent write as well.
+
+Only reject a second 'set in progress' while a write is already open.
+
+Upstream-Status: Pending
+
+Agent/generator: Oh My Pi harness, model opencode-go/deepseek-v4.1-flash.
+---
+ chassishandler.cpp | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/chassishandler.cpp b/chassishandler.cpp
+index 0508b57..b6a7532 100644
+--- a/chassishandler.cpp
++++ b/chassishandler.cpp
+@@ -2204,8 +2204,13 @@ ipmi::RspType<> ipmiChassisSetSysBootOptions(ipmi::Context::ptr ctx,
+         {
+             return ipmi::responseInvalidFieldRequest();
+         }
++        // A boot option parameter write is started with 'set in
++        // progress', finished with 'commit write', and then released with
++        // 'set complete'.  Only a second 'set in progress' while a write
++        // is open is a conflict.  Rejecting 'commit write' wedges the
++        // sequence for any client that stops at the first error.
+         if ((transferStatus == setInProgress) &&
+-            (static_cast<uint8_t>(setInProgressFlag) != setComplete))
++            (static_cast<uint8_t>(setInProgressFlag) == setInProgress))
+         {
+             return ipmi::responsefailSetInProgress();
+         }
+-- 
+2.54.0 (Apple Git-157)
+
