@@ -138,6 +138,14 @@
       "ignoreDbusMinMax": true,
       "timeout": 0,
       "unavailableAsFailed": false
+    },
+    {
+      "name": "HBA_Temp",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/HBA_Temp",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
     }
   ],
   "zones": [
@@ -234,9 +242,9 @@
         {
           "name": "temp_passive",
           "type": "stepwise",
-          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
+          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M", "HBA_Temp"],
           "setpoint": 30.0,
-          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
+          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M", "HBA_Temp"],
           "pid": {
             "samplePeriod": 0.5,
             "positiveHysteresis": 1.0,

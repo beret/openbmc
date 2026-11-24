@@ -11,14 +11,19 @@ in the infrastructure repository.
 | --- | --- | --- |
 | `NVMe_Temp` | Redfish PATCH or IPMI 0x04/0x30 | IPMI 0xE0, Redfish `temperature_NVMe_Temp` |
 | `HDD_Temp` | Redfish PATCH or IPMI 0x04/0x30 | IPMI 0xE1, Redfish `temperature_HDD_Temp` |
+| `HBA_Temp` | Redfish PATCH or IPMI 0x04/0x30 | IPMI 0xE2, Redfish `temperature_HBA_Temp` |
 
 `NVMe_Temp` excludes the onboard M.2 boot disk by default and takes the maximum
 of the remaining NVMe temperature sensors. `HDD_Temp` discovers every
 rotational, non-NVMe block device and takes the maximum. HDD queries use
-`smartctl -n standby`, so sleeping drives are not spun up.
+`smartctl -n standby`, so sleeping drives are not spun up. `HBA_Temp` reads the
+Broadcom/LSI ROC temperature with `storcli`; the bridge runs as root because
+`/dev/mpt3ctl` is root-only.
 
-Both sensors have a 90 s BMC timeout. The bridge pushes every 30 s; an
-all-standby HDD group sends `standby_temp` (30 C). Do not sum temperatures.
+All three sensors have a 90 s BMC timeout. The bridge pushes every 30 s; an
+all-standby HDD group sends `standby_temp` (30 C). Missing NVMe or HDD pushes
+fail their fan zones; `HBA_Temp` is a missing-acceptable board input, so a
+missing HBA only drops out of the zone 2 maximum. Do not sum temperatures.
 
 ## Install
 
@@ -30,7 +35,9 @@ sudo ./install-openbmc-sensors.sh \
 
 Credentials are nested in the same config: `redfish.user` +
 `redfish.password` and `ipmi.user` + `ipmi.password`. The file is installed
-0600. `ipmi-open` needs none.
+0600. `ipmi-open` needs none. HBA collection uses `hba_storcli`
+(default `/usr/local/sbin/storcli`) and `hba_controller` (default `/c0`); set
+`hba_storcli` to an empty string to disable it.
 
 Default install paths:
 
@@ -61,10 +68,10 @@ journalctl -u openbmc-sensors.service -f
 `--check` returns nonzero when the selected transport is missing its URL,
 host/user, or password; the installer uses it to decide whether to start.
 
-IPMI transports preflight `Get Sensor Reading` for `0xE0`/`0xE1`. A BMC without
-the matching SDR records returns `0xcb`; the bridge logs the missing sensor and
-does not push, because `Set Sensor Reading` succeeds even for an unknown sensor
-number. Redfish PATCH fails loudly on a missing `MemberId`.
+IPMI transports preflight `Get Sensor Reading` for `0xE0`/`0xE1`/`0xE2`. A BMC
+without the matching SDR records returns `0xcb`; the bridge logs the missing
+sensor and does not push, because `Set Sensor Reading` succeeds even for an
+unknown sensor number. Redfish PATCH fails loudly on a missing `MemberId`.
 
 The BMC contract is defined by `../README.md`; this bundle must not invent a
 different sensor name, number or timeout.

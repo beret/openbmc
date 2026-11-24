@@ -6,8 +6,9 @@
 #
 #   ipmitool raw 0x04 0x30 0xE0 0x00 <degC> 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 #   ipmitool raw 0x04 0x30 0xE1 0x00 <degC> 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+#   ipmitool raw 0x04 0x30 0xE2 0x00 <degC> 0x00 0x00 0x00 0x00 0x00 0x00 0x00
 #
-# 0xE0 = NVMe_Temp, 0xE1 = HDD_Temp.
+# 0xE0 = NVMe_Temp, 0xE1 = HDD_Temp, 0xE2 = HBA_Temp.
 0xE0:
   sensorType: 0x01
   sensorReadingType: 0x01
@@ -37,6 +38,27 @@
   readingType: readingData
   mutability: Mutability::Write|Mutability::Read
   sensorName: HDD_Temp
+  multiplierM: 1
+  offsetB: 0
+  bExp: 0
+  rExp: 0
+  scale: 0
+  sensorUnits1: 0x01
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: double
+
+0xE2:
+  sensorType: 0x01
+  sensorReadingType: 0x01
+  path: /xyz/openbmc_project/sensors/temperature/HBA_Temp
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorName: HBA_Temp
   multiplierM: 1
   offsetB: 0
   bExp: 0

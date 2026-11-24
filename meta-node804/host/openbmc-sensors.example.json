@@ -18,6 +18,8 @@
   ],
   "hdd": [],
   "hdd_type": "scsi",
+  "hba_storcli": "/usr/local/sbin/storcli",
+  "hba_controller": "/c0",
   "interval": 30,
   "standby_temp": 30
 }

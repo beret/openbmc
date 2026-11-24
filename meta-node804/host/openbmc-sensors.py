@@ -15,16 +15,22 @@ BMC contract (see meta-node804/README.md in the OpenBMC checkout):
   HDD_Temp   /xyz/openbmc_project/sensors/temperature/HDD_Temp
              IPMI sensor 0xE1, Redfish MemberId temperature_HDD_Temp
              zone 4 -> SYS_FAN2 (drive exhaust), SYS_FAN4 (drive intake)
+  HBA_Temp   /xyz/openbmc_project/sensors/temperature/HBA_Temp
+             IPMI sensor 0xE2, Redfish MemberId temperature_HBA_Temp
+             zone 2 -> motherboard passive group (max input)
 
-Both sensors have a 90 s timeout. Push every 30 s even when the value is
-unchanged: each write pets the watchdog. A missing push lets that zone go to
-100 percent; it does not affect the other zone. IPMI transports preflight Get
-Sensor Reading because Set Sensor Reading succeeds for an unknown number.
+All three sensors have a 90 s timeout. Push every 30 s even when the value is
+unchanged: each write pets the watchdog. A missing NVMe or HDD push lets that
+zone go to 100 percent; HBA_Temp is a missing-acceptable board input, so a
+missing HBA push only removes it from the zone 2 maximum. IPMI transports
+preflight Get Sensor Reading because Set Sensor Reading succeeds for an
+unknown number.
 
 Aggregation is MAX, never sum:
 
   NVMe_Temp = max(temperature_sensors[] on every non-excluded NVMe disk)
   HDD_Temp  = max(temperature.current on every configured SAS/SATA HDD)
+  HBA_Temp  = ROC temperature from storcli
 
 A drive in standby is skipped without being spun up: HDD smartctl calls use
 `-n standby`, and an all-standby group sends `standby_temp`. A read error is not
@@ -48,6 +54,8 @@ Config keys:
   nvme_exclude: stable paths to drop from nvme    # default the onboard M.2 boot disk
   hdd: list of HDD devices                       # empty = every rotational non-NVMe disk
   hdd_type: smartctl -d value (e.g. "scsi")      # default auto
+  hba_storcli: storcli path                      # default /usr/local/sbin/storcli; "" disables
+  hba_controller: storcli controller id          # default /c0
   sysfs_root: sysfs mount                        # default /sys; containers/tests only
   interval: seconds between pushes               # default 30, keep below 90
   standby_temp: C sent when all HDDs are asleep   # default 30
@@ -93,12 +101,15 @@ DEFAULT_CONFIG = {
     "nvme_exclude": ["/dev/disk/by-path/pci-0000:06:00.0-nvme-1"],
     "hdd": [],
     "hdd_type": "auto",
+    "hba_storcli": "/usr/local/sbin/storcli",
+    "hba_controller": "/c0",
     "sysfs_root": "/sys",
     "interval": 30,
     "standby_temp": 30,
 }
 NVME_SENSOR = 0xE0
 HDD_SENSOR = 0xE1
+HBA_SENSOR = 0xE2
 
 LOG = logging.getLogger("openbmc-sensors")
 
@@ -158,8 +169,9 @@ def load_config(path: str) -> dict:
     for key in ("nvme", "nvme_exclude", "hdd"):
         if not isinstance(cfg[key], list):
             raise ValueError(f"config.{key} must be a list")
-    if not isinstance(cfg["sysfs_root"], str):
-        raise ValueError("config.sysfs_root must be a string")
+    for key in ("sysfs_root", "hba_storcli", "hba_controller"):
+        if not isinstance(cfg[key], str):
+            raise ValueError(f"config.{key} must be a string")
     candidates = cfg["nvme"] or sorted(
         d for d in glob.glob("/dev/nvme[0-9]*") if re.fullmatch(r"/dev/nvme\d+", d)
     )
@@ -263,12 +275,43 @@ def hdd_sensor(data: dict) -> float | None:
     return None
 
 
+def hba_sensor(storcli: str, controller: str) -> float | None:
+    """Read the ROC temperature from storcli's JSON output."""
+    if not storcli:
+        return None
+    cmd = [storcli, controller, "show", "temperature", "J"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"storcli {controller}: {exc}") from exc
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout).strip().splitlines()
+        first = detail[0] if detail else f"exit {proc.returncode}"
+        raise RuntimeError(f"storcli {controller}: {first}")
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"storcli {controller}: invalid JSON: {exc}") from exc
+    for entry in data.get("Controllers") or []:
+        response = entry.get("Response Data") or {}
+        for prop in response.get("Controller Properties") or []:
+            if prop.get("Ctrl_Prop") != "ROC temperature(Degree Celsius)":
+                continue
+            try:
+                return float(prop["Value"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RuntimeError(
+                    f"storcli {controller}: invalid ROC temperature {prop.get('Value')!r}"
+                ) from exc
+    raise RuntimeError(f"storcli {controller}: ROC temperature not reported")
+
+
 def clamp_temp(value: float) -> int:
     """Round up and clamp to the BMC's 0..100 whole-degree range."""
     return max(0, min(100, math.ceil(float(value))))
 
 
-def collect(cfg: dict) -> tuple[int | None, int | None, list[str]]:
+def collect(cfg: dict) -> tuple[int | None, int | None, int | None, list[str]]:
     notes: list[str] = []
     nvme_values: list[float] = []
     hdd_values: list[float] = []
@@ -312,20 +355,36 @@ def collect(cfg: dict) -> tuple[int | None, int | None, list[str]]:
     else:
         hdd_max = None
 
-    for name, value in (("NVMe_Temp", nvme_max), ("HDD_Temp", hdd_max)):
+    hba_value: float | None = None
+    if cfg["hba_storcli"]:
+        try:
+            hba_value = hba_sensor(cfg["hba_storcli"], cfg["hba_controller"])
+        except RuntimeError as exc:
+            notes.append(str(exc))
+    hba_max = clamp_temp(hba_value) if hba_value is not None else None
+
+    for name, value in (
+        ("NVMe_Temp", nvme_max),
+        ("HDD_Temp", hdd_max),
+        ("HBA_Temp", hba_max),
+    ):
         if value is not None:
             LOG.info("%s=%d C", name, value)
     for note in notes:
         LOG.warning("%s", note)
-    return nvme_max, hdd_max, notes
+    return nvme_max, hdd_max, hba_max, notes
 
 
-def redfish_request(cfg: dict, nvme: int | None, hdd: int | None) -> tuple[str, bytes]:
+def redfish_request(
+    cfg: dict, nvme: int | None, hdd: int | None, hba: int | None
+) -> tuple[str, bytes]:
     temperatures = []
     if nvme is not None:
         temperatures.append({"MemberId": "temperature_NVMe_Temp", "ReadingCelsius": nvme})
     if hdd is not None:
         temperatures.append({"MemberId": "temperature_HDD_Temp", "ReadingCelsius": hdd})
+    if hba is not None:
+        temperatures.append({"MemberId": "temperature_HBA_Temp", "ReadingCelsius": hba})
     if not temperatures:
         raise RuntimeError("nothing to push")
     redfish = cfg["redfish"]
@@ -335,8 +394,8 @@ def redfish_request(cfg: dict, nvme: int | None, hdd: int | None) -> tuple[str, 
     return url, json.dumps({"Temperatures": temperatures}).encode("utf-8")
 
 
-def push_redfish(cfg: dict, nvme: int | None, hdd: int | None) -> None:
-    url, body = redfish_request(cfg, nvme, hdd)
+def push_redfish(cfg: dict, nvme: int | None, hdd: int | None, hba: int | None) -> None:
+    url, body = redfish_request(cfg, nvme, hdd, hba)
     redfish = cfg["redfish"]
     request = urllib.request.Request(url, data=body, method="PATCH")
     request.add_header("Content-Type", "application/json")
@@ -372,10 +431,16 @@ def ipmi_command(cfg: dict) -> list[str]:
     raise RuntimeError(f"unsupported transport {transport!r}")
 
 
-def ipmi_commands(cfg: dict, nvme: int | None, hdd: int | None) -> list[list[str]]:
+def ipmi_commands(
+    cfg: dict, nvme: int | None, hdd: int | None, hba: int | None
+) -> list[list[str]]:
     base = ipmi_command(cfg)
     commands = []
-    for sensor, value in ((NVME_SENSOR, nvme), (HDD_SENSOR, hdd)):
+    for sensor, value in (
+        (NVME_SENSOR, nvme),
+        (HDD_SENSOR, hdd),
+        (HBA_SENSOR, hba),
+    ):
         if value is None:
             continue
         commands.append(
@@ -406,7 +471,7 @@ def ipmi_present_sensors(cfg: dict) -> set[int]:
     """
     present: set[int] = set()
     env = ipmi_env(cfg)
-    for sensor in (NVME_SENSOR, HDD_SENSOR):
+    for sensor in (NVME_SENSOR, HDD_SENSOR, HBA_SENSOR):
         cmd = ipmi_command(cfg) + [
             "raw", "0x04", "0x2D", f"0x{sensor:02X}",
         ]
@@ -420,23 +485,27 @@ def ipmi_present_sensors(cfg: dict) -> set[int]:
     return present
 
 
-def push_ipmi(cfg: dict, nvme: int | None, hdd: int | None) -> None:
+def push_ipmi(
+    cfg: dict, nvme: int | None, hdd: int | None, hba: int | None
+) -> None:
     env = ipmi_env(cfg)
-    for cmd in ipmi_commands(cfg, nvme, hdd):
+    for cmd in ipmi_commands(cfg, nvme, hdd, hba):
         LOG.debug("running %s", " ".join(cmd))
         subprocess.run(cmd, check=True, env=env, capture_output=True, text=True)
 
 
-def push(cfg: dict, nvme: int | None, hdd: int | None) -> None:
+def push(
+    cfg: dict, nvme: int | None, hdd: int | None, hba: int | None
+) -> None:
     if cfg["transport"] == "redfish":
-        push_redfish(cfg, nvme, hdd)
+        push_redfish(cfg, nvme, hdd, hba)
     else:
-        push_ipmi(cfg, nvme, hdd)
+        push_ipmi(cfg, nvme, hdd, hba)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Push Node 804 NVMe and SAS HDD maximum temperatures to the BMC.",
+        description="Push Node 804 NVMe, SAS HDD, and HBA temperatures to the BMC.",
         epilog="See meta-node804/README.md for the BMC sensor contract.",
     )
     parser.add_argument("--config", default=DEFAULT_CONFIG_PATH, help=f"JSON config (default {DEFAULT_CONFIG_PATH})")
@@ -475,12 +544,13 @@ def main() -> int:
             return 1
         return 0
 
-    LOG.info("transport=%s interval=%ss NVMe=%s HDD=%s",
-             cfg["transport"], cfg["interval"], cfg["nvme"], cfg["hdd"])
+    LOG.info("transport=%s interval=%ss NVMe=%s HDD=%s HBA=%s %s",
+             cfg["transport"], cfg["interval"], cfg["nvme"], cfg["hdd"],
+             cfg["hba_storcli"] or "disabled", cfg["hba_controller"])
 
     ok = True
     while True:
-        nvme, hdd, _ = collect(cfg)
+        nvme, hdd, hba, _ = collect(cfg)
         if not args.dry_run and cfg["transport"] != "redfish":
             try:
                 present = ipmi_present_sensors(cfg)
@@ -491,28 +561,36 @@ def main() -> int:
                 nvme = None
             if HDD_SENSOR not in present:
                 hdd = None
-            if len(present) != 2:
+            if HBA_SENSOR not in present:
+                hba = None
+            if len(present) != 3:
                 ok = False
-        if nvme is None or hdd is None:
+        if nvme is None or hdd is None or hba is None:
             ok = False
-            missing = [n for n, v in (("NVMe_Temp", nvme), ("HDD_Temp", hdd)) if v is None]
-            LOG.error("not pushing %s; its PID zone will time out", ", ".join(missing))
-        if nvme is not None or hdd is not None:
+            missing = [
+                n for n, v in (
+                    ("NVMe_Temp", nvme), ("HDD_Temp", hdd), ("HBA_Temp", hba)
+                ) if v is None
+            ]
+            LOG.error(
+                "not pushing %s; missing NVMe/HDD fail their zones, HBA is optional",
+                ", ".join(missing),
+            )
+        if nvme is not None or hdd is not None or hba is not None:
             if args.dry_run:
                 try:
                     if cfg["transport"] == "redfish":
-                        url, body = redfish_request(cfg, nvme, hdd)
+                        url, body = redfish_request(cfg, nvme, hdd, hba)
                         LOG.info("dry-run PATCH %s %s", url, body.decode())
                     else:
-                        for cmd in ipmi_commands(cfg, nvme, hdd):
+                        for cmd in ipmi_commands(cfg, nvme, hdd, hba):
                             LOG.info("dry-run: %s", " ".join(cmd))
                 except RuntimeError as exc:
                     ok = False
                     LOG.error("dry-run payload: %s", exc)
             else:
                 try:
-                    push(cfg, nvme, hdd)
-                    ok = True
+                    push(cfg, nvme, hdd, hba)
                 except (RuntimeError, OSError, subprocess.CalledProcessError) as exc:
                     ok = False
                     LOG.error("push failed: %s", exc)
