@@ -93,7 +93,8 @@ site-specific deployment, credentials and POSTINIT handling.
   disks (`nvme_smart_health_information_log.temperature_sensors[]`, falling
   back to `temperature`). The onboard M.2 boot disk at
   `/dev/disk/by-path/pci-0000:06:00.0-nvme-1` is excluded by the host script;
-  its nearby board sensor (`RT_M2M`) is not part of this policy.
+  its nearby board sensor (`RT_M2M`) is an input to the zone 2 board passive
+  fan group, not the NVMe blower zone.
 - `HDD_Temp` = maximum `temperature.current` across every rotational,
   non-NVMe block device (`/sys/block/*/queue/rotational == 1`). This picks up
   all SAS/SATA HDDs and excludes NVMe, boot SATA SSDs, loop, dm and md. An
