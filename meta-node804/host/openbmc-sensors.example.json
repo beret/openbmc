@@ -1,10 +1,17 @@
 {
   "transport": "redfish",
-  "redfish_url": "https://bmc.example",
-  "redfish_user": "admin",
-  "password_file": "/etc/openbmc-sensors/password",
-  "chassis": "chassis",
-  "verify_tls": false,
+  "redfish": {
+    "url": "https://bmc.example",
+    "user": "admin",
+    "password": "",
+    "chassis": "chassis",
+    "verify_tls": false
+  },
+  "ipmi": {
+    "host": "",
+    "user": "",
+    "password": ""
+  },
   "nvme": [],
   "nvme_exclude": [
     "/dev/disk/by-path/pci-0000:06:00.0-nvme-1"

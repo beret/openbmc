@@ -33,19 +33,17 @@ papered over: that group is simply not pushed and its zone fails safe.
 Usage:
   sudo ./install-openbmc-sensors.sh \
       --install-dir /usr/local/libexec/openbmc-sensors \
-      --config /etc/openbmc-sensors/config.json \
-      --password-file /etc/openbmc-sensors/password
+      --config /etc/openbmc-sensors/config.json
   /usr/local/libexec/openbmc-sensors/openbmc-sensors.py \
       --config /etc/openbmc-sensors/config.json --once
 
   # Debug without touching the BMC:
   openbmc-sensors.py --config ... --dry-run --once
 
-Config keys (all optional unless marked):
+Config keys:
   transport: "redfish" (default), "ipmi-open" or "ipmi-lanplus"
-  password_file: BMC password file for Redfish and IPMI LAN
-  redfish_url, redfish_user, chassis, verify_tls
-  ipmi_host, ipmi_user                            # lanplus only
+  redfish: {url, user, password, chassis, verify_tls}
+  ipmi: {host, user, password}
   nvme: list of NVMe block devices               # default /dev/nvme[0-9]*
   nvme_exclude: stable paths to drop from nvme    # default the onboard M.2 boot disk
   hdd: list of HDD devices                       # empty = every rotational non-NVMe disk
@@ -53,6 +51,10 @@ Config keys (all optional unless marked):
   sysfs_root: sysfs mount                        # default /sys; containers/tests only
   interval: seconds between pushes               # default 30, keep below 90
   standby_temp: C sent when all HDDs are asleep   # default 30
+
+Redfish and IPMI have separate user/password fields in the same 0600 config
+file. There are no separate password files. Leave the credentials empty for
+ipmi-open.
 """
 
 from __future__ import annotations
@@ -75,13 +77,18 @@ import urllib.request
 DEFAULT_CONFIG_PATH = "/etc/openbmc-sensors/config.json"
 DEFAULT_CONFIG = {
     "transport": "redfish",
-    "password_file": "",
-    "redfish_url": "",
-    "redfish_user": "",
-    "chassis": "chassis",
-    "verify_tls": True,
-    "ipmi_host": "",
-    "ipmi_user": "",
+    "redfish": {
+        "url": "",
+        "user": "",
+        "password": "",
+        "chassis": "chassis",
+        "verify_tls": True,
+    },
+    "ipmi": {
+        "host": "",
+        "user": "",
+        "password": "",
+    },
     "nvme": [],
     "nvme_exclude": ["/dev/disk/by-path/pci-0000:06:00.0-nvme-1"],
     "hdd": [],
@@ -94,16 +101,6 @@ NVME_SENSOR = 0xE0
 HDD_SENSOR = 0xE1
 
 LOG = logging.getLogger("openbmc-sensors")
-
-
-def read_password(path: str) -> str:
-    if not path:
-        raise ValueError("password_file is empty")
-    mode = os.stat(path).st_mode & 0o777
-    if mode & 0o077:
-        LOG.warning("password file %s is readable by group/other (mode %03o)", path, mode)
-    with open(path, "r", encoding="utf-8") as f:
-        return f.readline().rstrip("\n")
 
 
 def nvme_base(device: str) -> str | None:
@@ -136,6 +133,13 @@ def discover_hdds(sysfs_root: str) -> list[str]:
     return devices
 
 
+def block_password(section: dict, name: str) -> str:
+    password = section.get("password", "")
+    if password:
+        return password
+    raise ValueError(f"{name} password is empty")
+
+
 def load_config(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
         user = json.load(f)
@@ -145,6 +149,12 @@ def load_config(path: str) -> dict:
     cfg = dict(DEFAULT_CONFIG)
     cfg.update({k: v for k, v in user.items() if k in DEFAULT_CONFIG})
     cfg["config_path"] = path
+    for section in ("redfish", "ipmi"):
+        if not isinstance(cfg[section], dict):
+            raise ValueError(f"config.{section} must be an object")
+        merged = dict(DEFAULT_CONFIG[section])
+        merged.update(cfg[section])
+        cfg[section] = merged
     for key in ("nvme", "nvme_exclude", "hdd"):
         if not isinstance(cfg[key], list):
             raise ValueError(f"config.{key} must be a list")
@@ -318,23 +328,27 @@ def redfish_request(cfg: dict, nvme: int | None, hdd: int | None) -> tuple[str, 
         temperatures.append({"MemberId": "temperature_HDD_Temp", "ReadingCelsius": hdd})
     if not temperatures:
         raise RuntimeError("nothing to push")
-    if not cfg["redfish_url"]:
-        raise RuntimeError("redfish_url is empty")
-    url = cfg["redfish_url"].rstrip("/") + f"/redfish/v1/Chassis/{cfg['chassis']}/Thermal/"
+    redfish = cfg["redfish"]
+    if not redfish["url"]:
+        raise RuntimeError("redfish.url is empty")
+    url = redfish["url"].rstrip("/") + f"/redfish/v1/Chassis/{redfish['chassis']}/Thermal/"
     return url, json.dumps({"Temperatures": temperatures}).encode("utf-8")
 
 
 def push_redfish(cfg: dict, nvme: int | None, hdd: int | None) -> None:
     url, body = redfish_request(cfg, nvme, hdd)
+    redfish = cfg["redfish"]
     request = urllib.request.Request(url, data=body, method="PATCH")
     request.add_header("Content-Type", "application/json")
-    user = cfg["redfish_user"]
-    password = read_password(cfg["password_file"])
     request.add_header(
-        "Authorization", "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode()
+        "Authorization",
+        "Basic "
+        + base64.b64encode(
+            f"{redfish['user']}:{block_password(redfish, 'Redfish')}".encode()
+        ).decode(),
     )
     context = ssl.create_default_context()
-    if not cfg["verify_tls"]:
+    if not redfish["verify_tls"]:
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
     try:
@@ -351,9 +365,10 @@ def ipmi_command(cfg: dict) -> list[str]:
     if transport == "ipmi-open":
         return ["ipmitool", "-I", "open"]
     if transport == "ipmi-lanplus":
-        if not cfg["ipmi_host"] or not cfg["ipmi_user"]:
-            raise RuntimeError("ipmi_host and ipmi_user are required for ipmi-lanplus")
-        return ["ipmitool", "-I", "lanplus", "-H", cfg["ipmi_host"], "-U", cfg["ipmi_user"], "-E"]
+        ipmi = cfg["ipmi"]
+        if not ipmi["host"] or not ipmi["user"]:
+            raise RuntimeError("ipmi.host and ipmi.user are required for ipmi-lanplus")
+        return ["ipmitool", "-I", "lanplus", "-H", ipmi["host"], "-U", ipmi["user"], "-E"]
     raise RuntimeError(f"unsupported transport {transport!r}")
 
 
@@ -378,7 +393,7 @@ def ipmi_commands(cfg: dict, nvme: int | None, hdd: int | None) -> list[list[str
 def ipmi_env(cfg: dict) -> dict[str, str]:
     env = dict(os.environ)
     if cfg["transport"] == "ipmi-lanplus":
-        env["IPMI_PASSWORD"] = read_password(cfg["password_file"])
+        env["IPMI_PASSWORD"] = block_password(cfg["ipmi"], "IPMI")
     return env
 
 

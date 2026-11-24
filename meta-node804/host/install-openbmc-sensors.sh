@@ -11,11 +11,10 @@
 #       --install-dir /mnt/zippy/tools \
 #       --config /mnt/zippy/tools/openbmc-sensors.json \
 #       --unit-dir /etc/systemd/system \
-#       --mount-dir /mnt/zippy/tools \
-#       --password-file /etc/openbmc-sensors/password
+#       --mount-dir /mnt/zippy/tools
 #
-# Existing config and password files are never overwritten. With
-# --skip-systemd the files are installed but no unit is enabled or started.
+# Existing config is never overwritten. With --skip-systemd the files are
+# installed but no unit is enabled or started.
 set -eu
 
 usage() {
@@ -28,7 +27,6 @@ Usage: install-openbmc-sensors.sh [options]
   --unit-dir DIR       systemd unit directory (default /etc/systemd/system)
   --service-name NAME  systemd service name (default openbmc-sensors)
   --mount-dir DIR      add RequiresMountsFor=DIR to the unit
-  --password-file FILE create an empty 0600 password file if absent
   --no-start           enable but do not start the unit
   --skip-systemd       install files only; do not call systemctl
   -h, --help           show this help
@@ -40,7 +38,6 @@ config=/etc/openbmc-sensors/config.json
 unit_dir=/etc/systemd/system
 service_name=openbmc-sensors
 mount_dir=
-password_file=
 no_start=0
 skip_systemd=0
 
@@ -51,7 +48,6 @@ while [ $# -gt 0 ]; do
         --unit-dir) unit_dir=${2:?}; shift 2 ;;
         --service-name) service_name=${2:?}; shift 2 ;;
         --mount-dir) mount_dir=${2:?}; shift 2 ;;
-        --password-file) password_file=${2:?}; shift 2 ;;
         --no-start) no_start=1; shift ;;
         --skip-systemd) skip_systemd=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -97,18 +93,9 @@ done
 
 if [ ! -e "$config" ]; then
     install -m 0600 "$src_dir/openbmc-sensors.example.json" "$config"
-    echo "created $config; edit the transport and sensor policy"
+    echo "created $config; edit the nested redfish/ipmi credentials and sensor policy"
 else
     echo "keeping existing $config"
-fi
-
-if [ -n "$password_file" ]; then
-    password_dir=$(dirname -- "$password_file")
-    [ -d "$password_dir" ] || install -d -m 0700 "$password_dir"
-    if [ ! -e "$password_file" ]; then
-        (umask 077; : > "$password_file")
-        echo "created empty $password_file"
-    fi
 fi
 
 python=$(command -v python3)
@@ -136,14 +123,28 @@ systemctl daemon-reload
 systemctl enable "$service_name.service"
 
 transport=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("transport","redfish"))' "$config" 2>/dev/null || echo redfish)
-password_ready=0
-if [ -n "$password_file" ] && [ -s "$password_file" ]; then
-    password_ready=1
-fi
-if [ "$no_start" != 1 ] && { [ "$transport" = "ipmi-open" ] || [ "$password_ready" = 1 ]; }; then
+startable=$(python3 - "$config" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], "r", encoding="utf-8") as f:
+        config = json.load(f)
+except Exception:
+    print(0)
+    raise SystemExit(0)
+transport = config.get("transport", "redfish")
+if transport == "ipmi-open":
+    print(1)
+    raise SystemExit(0)
+section = config.get("ipmi" if transport == "ipmi-lanplus" else "redfish", {})
+print(1 if section.get("password") else 0)
+PY
+)
+if [ "$no_start" != 1 ] && [ "$startable" = 1 ]; then
     systemctl restart "$service_name.service"
     echo "started $service_name.service (transport=$transport)"
 else
     echo "installed and enabled $service_name.service; not started"
-    echo "after editing $config and credentials: systemctl restart $service_name.service"
+    echo "after editing $config credentials: systemctl restart $service_name.service"
 fi

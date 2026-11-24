@@ -25,9 +25,12 @@ all-standby HDD group sends `standby_temp` (30 C). Do not sum temperatures.
 ```sh
 sudo ./install-openbmc-sensors.sh \
     --install-dir /usr/local/libexec/openbmc-sensors \
-    --config /etc/openbmc-sensors/config.json \
-    --password-file /etc/openbmc-sensors/password
+    --config /etc/openbmc-sensors/config.json
 ```
+
+Credentials are nested in the same config: `redfish.user` +
+`redfish.password` and `ipmi.user` + `ipmi.password`. The file is installed
+0600. `ipmi-open` needs none.
 
 Default install paths:
 
