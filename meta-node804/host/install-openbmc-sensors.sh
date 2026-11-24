@@ -12,7 +12,7 @@
 #       --config /mnt/zippy/tools/openbmc-sensors.json \
 #       --unit-dir /etc/systemd/system \
 #       --mount-dir /mnt/zippy/tools \
-#       --password-file /root/.config/openbmc-sensors.pass
+#       --password-file /etc/openbmc-sensors/password
 #
 # Existing config and password files are never overwritten. With
 # --skip-systemd the files are installed but no unit is enabled or started.

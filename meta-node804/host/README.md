@@ -26,7 +26,7 @@ all-standby HDD group sends `standby_temp` (30 C). Do not sum temperatures.
 sudo ./install-openbmc-sensors.sh \
     --install-dir /usr/local/libexec/openbmc-sensors \
     --config /etc/openbmc-sensors/config.json \
-    --password-file /etc/openbmc-sensors/redfish.pass
+    --password-file /etc/openbmc-sensors/password
 ```
 
 Default install paths:

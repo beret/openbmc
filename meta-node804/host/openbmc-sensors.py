@@ -34,7 +34,7 @@ Usage:
   sudo ./install-openbmc-sensors.sh \
       --install-dir /usr/local/libexec/openbmc-sensors \
       --config /etc/openbmc-sensors/config.json \
-      --password-file /etc/openbmc-sensors/redfish.pass
+      --password-file /etc/openbmc-sensors/password
   /usr/local/libexec/openbmc-sensors/openbmc-sensors.py \
       --config /etc/openbmc-sensors/config.json --once
 
@@ -43,8 +43,10 @@ Usage:
 
 Config keys (all optional unless marked):
   transport: "redfish" (default), "ipmi-open" or "ipmi-lanplus"
-  redfish_url, redfish_user, redfish_password_file, chassis, verify_tls
-  ipmi_host, ipmi_user, ipmi_password_file       # lanplus only
+  password_file: common BMC password file for Redfish and IPMI LAN
+  redfish_password_file, ipmi_password_file: per-transport overrides
+  redfish_url, redfish_user, chassis, verify_tls
+  ipmi_host, ipmi_user                            # lanplus only
   nvme: list of NVMe block devices               # default /dev/nvme[0-9]*
   nvme_exclude: stable paths to drop from nvme    # default the onboard M.2 boot disk
   hdd: list of HDD devices                       # empty = every rotational non-NVMe disk
@@ -74,6 +76,7 @@ import urllib.request
 DEFAULT_CONFIG_PATH = "/etc/openbmc-sensors/config.json"
 DEFAULT_CONFIG = {
     "transport": "redfish",
+    "password_file": "",
     "redfish_url": "",
     "redfish_user": "",
     "redfish_password_file": "",
@@ -145,6 +148,12 @@ def load_config(path: str) -> dict:
     cfg = dict(DEFAULT_CONFIG)
     cfg.update({k: v for k, v in user.items() if k in DEFAULT_CONFIG})
     cfg["config_path"] = path
+    common_password = cfg["password_file"]
+    if common_password:
+        if not cfg["redfish_password_file"]:
+            cfg["redfish_password_file"] = common_password
+        if not cfg["ipmi_password_file"]:
+            cfg["ipmi_password_file"] = common_password
     for key in ("nvme", "nvme_exclude", "hdd"):
         if not isinstance(cfg[key], list):
             raise ValueError(f"config.{key} must be a list")

@@ -2,7 +2,7 @@
   "transport": "redfish",
   "redfish_url": "https://bmc.example",
   "redfish_user": "admin",
-  "redfish_password_file": "/etc/openbmc-sensors/redfish.pass",
+  "password_file": "/etc/openbmc-sensors/password",
   "chassis": "chassis",
   "verify_tls": false,
   "nvme": [],
