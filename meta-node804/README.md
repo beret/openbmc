@@ -73,6 +73,11 @@ In-band `/dev/ipmi0` works and needs no BMC credentials; LAN uses
 `-I lanplus -H <bmc> -U <user>`. `ipmitool` exposes no high-level command for
 Set Sensor Reading, so this uses `raw`.
 
+The host preflights `Get Sensor Reading` (NetFn 0x04, Cmd 0x2D) before pushing.
+Set Sensor Reading returns success for an unknown sensor number, so it cannot
+detect a BMC still running an older image; Get Sensor Reading returns `0xcb`
+until the two SDR entries exist.
+
 The SDR entries in
 `recipes-phosphor/ipmi/phosphor-ipmi-sensor-inventory-native/` are required only
 for IPMI. Redfish writes the same D-Bus property without an SDR record.
