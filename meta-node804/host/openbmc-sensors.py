@@ -43,8 +43,7 @@ Usage:
 
 Config keys (all optional unless marked):
   transport: "redfish" (default), "ipmi-open" or "ipmi-lanplus"
-  password_file: common BMC password file for Redfish and IPMI LAN
-  redfish_password_file, ipmi_password_file: per-transport overrides
+  password_file: BMC password file for Redfish and IPMI LAN
   redfish_url, redfish_user, chassis, verify_tls
   ipmi_host, ipmi_user                            # lanplus only
   nvme: list of NVMe block devices               # default /dev/nvme[0-9]*
@@ -79,12 +78,10 @@ DEFAULT_CONFIG = {
     "password_file": "",
     "redfish_url": "",
     "redfish_user": "",
-    "redfish_password_file": "",
     "chassis": "chassis",
     "verify_tls": True,
     "ipmi_host": "",
     "ipmi_user": "",
-    "ipmi_password_file": "",
     "nvme": [],
     "nvme_exclude": ["/dev/disk/by-path/pci-0000:06:00.0-nvme-1"],
     "hdd": [],
@@ -148,12 +145,6 @@ def load_config(path: str) -> dict:
     cfg = dict(DEFAULT_CONFIG)
     cfg.update({k: v for k, v in user.items() if k in DEFAULT_CONFIG})
     cfg["config_path"] = path
-    common_password = cfg["password_file"]
-    if common_password:
-        if not cfg["redfish_password_file"]:
-            cfg["redfish_password_file"] = common_password
-        if not cfg["ipmi_password_file"]:
-            cfg["ipmi_password_file"] = common_password
     for key in ("nvme", "nvme_exclude", "hdd"):
         if not isinstance(cfg[key], list):
             raise ValueError(f"config.{key} must be a list")
@@ -338,7 +329,7 @@ def push_redfish(cfg: dict, nvme: int | None, hdd: int | None) -> None:
     request = urllib.request.Request(url, data=body, method="PATCH")
     request.add_header("Content-Type", "application/json")
     user = cfg["redfish_user"]
-    password = read_password(cfg["redfish_password_file"])
+    password = read_password(cfg["password_file"])
     request.add_header(
         "Authorization", "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode()
     )
@@ -387,7 +378,7 @@ def ipmi_commands(cfg: dict, nvme: int | None, hdd: int | None) -> list[list[str
 def ipmi_env(cfg: dict) -> dict[str, str]:
     env = dict(os.environ)
     if cfg["transport"] == "ipmi-lanplus":
-        env["IPMI_PASSWORD"] = read_password(cfg["ipmi_password_file"])
+        env["IPMI_PASSWORD"] = read_password(cfg["password_file"])
     return env
 
 
