@@ -1,0 +1,285 @@
+{
+  "sensors": [
+    {
+      "name": "CPU_FAN",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm1",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm1",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "SYS_FAN1",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm3",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm3",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "SYS_FAN2",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm4",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm4",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "SYS_FAN3",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm6",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm6",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "SYS_FAN4",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm5",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm5",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "SYS_FAN5",
+      "type": "fan",
+      "readPath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm7",
+      "writePath": "/sys/devices/platform/ahb/ahb:apb/1e786000.pwm-tacho-controller/hwmon/hwmon0/pwm7",
+      "min": 0,
+      "max": 255
+    },
+    {
+      "name": "CPU",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/CPU_1",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": true
+    },
+    {
+      "name": "DIMMA0",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/DIMMA0_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "DIMMA1",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/DIMMA1_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "DIMMB0",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/DIMMB0_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "DIMMB1",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/DIMMB1_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "VR",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/VR_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "B550_FCH",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/B550_FCH_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "X550_LAN",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/X550_LAN_TEMP",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    },
+    {
+      "name": "RT_M2M",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/RT_M2M",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
+    }
+  ],
+  "zones": [
+    {
+      "id": 1,
+      "minThermalOutput": 25.0,
+      "failsafePercent": 100.0,
+      "cycleIntervalTimeMS": 100,
+      "updateThermalsTimeMS": 1000,
+      "pids": [
+        {
+          "name": "CPU_Fan",
+          "type": "fan",
+          "inputs": ["CPU_FAN"],
+          "setpoint": 128.0,
+          "pid": {
+            "samplePeriod": 0.1,
+            "proportionalCoeff": 0.0,
+            "integralCoeff": 0.0,
+            "feedFwdOffsetCoeff": 0.0,
+            "feedFwdGainCoeff": 1.0,
+            "integralLimit_min": 0.0,
+            "integralLimit_max": 0.0,
+            "outLim_min": 0.0,
+            "outLim_max": 100.0,
+            "slewNeg": -5.0,
+            "slewPos": 5.0
+          }
+        },
+        {
+          "name": "temp1",
+          "type": "stepwise",
+          "inputs": ["CPU"],
+          "setpoint": 30.0,
+          "pid": {
+            "samplePeriod": 0.5,
+            "positiveHysteresis": 1.0,
+            "negativeHysteresis": 1.0,
+            "isCeiling": false,
+            "reading": {
+              "0": 35,
+              "1": 50,
+              "2": 60,
+              "3": 68,
+              "4": 75,
+              "5": 80,
+              "6": 84,
+              "7": 87,
+              "8": 89,
+              "9": 90
+            },
+            "output": {
+              "0": 10,
+              "1": 20,
+              "2": 30,
+              "3": 40,
+              "4": 50,
+              "5": 60,
+              "6": 70,
+              "7": 80,
+              "8": 90,
+              "9": 100
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "minThermalOutput": 25.0,
+      "failsafePercent": 100.0,
+      "cycleIntervalTimeMS": 100,
+      "updateThermalsTimeMS": 1000,
+      "pids": [
+        {
+          "name": "SYS_Fans",
+          "type": "fan",
+          "inputs": ["SYS_FAN1", "SYS_FAN2", "SYS_FAN3", "SYS_FAN4", "SYS_FAN5"],
+          "setpoint": 128.0,
+          "pid": {
+            "samplePeriod": 0.1,
+            "proportionalCoeff": 0.0,
+            "integralCoeff": 0.0,
+            "feedFwdOffsetCoeff": 0.0,
+            "feedFwdGainCoeff": 1.0,
+            "integralLimit_min": 0.0,
+            "integralLimit_max": 0.0,
+            "outLim_min": 0.0,
+            "outLim_max": 100.0,
+            "slewNeg": -5.0,
+            "slewPos": 5.0
+          }
+        },
+        {
+          "name": "temp_passive",
+          "type": "stepwise",
+          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
+          "setpoint": 30.0,
+          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
+          "pid": {
+            "samplePeriod": 0.5,
+            "positiveHysteresis": 1.0,
+            "negativeHysteresis": 1.0,
+            "isCeiling": false,
+            "reading": {
+              "0": 35,
+              "1": 45,
+              "2": 55,
+              "3": 63,
+              "4": 70,
+              "5": 76,
+              "6": 80
+            },
+            "output": {
+              "0": 10,
+              "1": 20,
+              "2": 30,
+              "3": 40,
+              "4": 60,
+              "5": 80,
+              "6": 100
+            }
+          }
+        },
+        {
+          "name": "temp_cpu",
+          "type": "stepwise",
+          "inputs": ["CPU"],
+          "setpoint": 30.0,
+          "pid": {
+            "samplePeriod": 0.5,
+            "positiveHysteresis": 1.0,
+            "negativeHysteresis": 1.0,
+            "isCeiling": false,
+            "reading": {
+              "0": 35,
+              "1": 50,
+              "2": 60,
+              "3": 68,
+              "4": 75,
+              "5": 80,
+              "6": 84,
+              "7": 87,
+              "8": 89,
+              "9": 90
+            },
+            "output": {
+              "0": 10,
+              "1": 20,
+              "2": 30,
+              "3": 40,
+              "4": 50,
+              "5": 60,
+              "6": 70,
+              "7": 80,
+              "8": 90,
+              "9": 100
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

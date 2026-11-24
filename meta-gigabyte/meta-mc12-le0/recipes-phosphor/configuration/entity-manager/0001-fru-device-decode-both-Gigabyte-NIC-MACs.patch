@@ -1,0 +1,159 @@
+From e3ed2753168aa1a43613e95c0e63839c11defef9 Mon Sep 17 00:00:00 2001
+From: beret <69595+beret@users.noreply.github.com>
+Date: Wed, 18 Nov 2026 05:38:37 -0700
+Subject: [PATCH] fru-device: decode both Gigabyte NIC MACs
+
+The Gigabyte SKU EEPROM gzip XML stores the dedicated and shared BMC NIC MAC addresses under BoardInfo/Main/NIC. Only the dedicated MAC was copied into BOARD_INFO_AM2, so the shared interface never reached FruDevice or Redfish.
+
+Parse both Interface modes and publish the shared MAC as BOARD_INFO_AM1 alongside the existing dedicated BOARD_INFO_AM2 value. This keeps the standard FRU fields untouched and matches the AM1/AM2 mapping used by the board configuration.
+
+Tested against the upstream gzip fixture, which already contains both interfaces.
+
+Upstream-Status: Pending
+
+Agent/generator: Oh My Pi harness, model opencode-go/deepseek-v4.1-flash.
+---
+ src/fru_device/fru_utils.cpp | 65 ++++++++++++++++++++++++------------
+ src/fru_device/fru_utils.hpp |  9 ++++-
+ test/test_fru-utils.cpp      |  7 ++--
+ 3 files changed, 55 insertions(+), 26 deletions(-)
+
+diff --git a/src/fru_device/fru_utils.cpp b/src/fru_device/fru_utils.cpp
+index 6e5d5c0..e757145 100644
+--- a/src/fru_device/fru_utils.cpp
++++ b/src/fru_device/fru_utils.cpp
+@@ -735,8 +735,11 @@ bool validateHeader(const std::array<uint8_t, I2C_SMBUS_BLOCK_MAX>& blockData)
+     return true;
+ }
+ 
+-std::string parseMacFromGzipXmlHeader(FRUReader& reader, off_t offset)
++GigabyteMacAddresses parseMacsFromGzipXmlHeader(FRUReader& reader,
++                                                off_t offset)
+ {
++    GigabyteMacAddresses macs;
++
+     // gzip starts at offset 512. Read that from the FRU
+     // in this case, 32k bytes is enough to hold the whole manifest
+     constexpr size_t totalReadSize = 32UL * 1024UL;
+@@ -746,26 +749,39 @@ std::string parseMacFromGzipXmlHeader(FRUReader& reader, off_t offset)
+     int rc = reader.read(offset, totalReadSize, headerData.data());
+     if (rc <= 0)
+     {
+-        return {};
++        return macs;
+     }
+ 
+     std::optional<std::string> xml = gzipInflate(headerData);
+     if (!xml)
+     {
+-        return {};
+-    }
+-    std::vector<std::string> node = getNodeFromXml(
+-        *xml, "/GSSKU/BoardInfo/Main/NIC/*[Mode = 'Dedicated']/MacAddr0");
+-    if (node.empty())
+-    {
+-        lg2::debug("No mac address found in gzip xml header");
+-        return {};
++        return macs;
+     }
+-    if (node.size() > 1)
+-    {
+-        lg2::warning("Multiple mac addresses found in gzip xml header");
+-    }
+-    return node[0];
++
++    auto getMac = [&xml](const char* mode, const char* xpath) {
++        std::vector<std::string> node = getNodeFromXml(*xml, xpath);
++        if (node.empty())
++        {
++            lg2::debug("No {MODE} MAC address found in gzip xml header",
++                       "MODE", mode);
++            return std::string{};
++        }
++        if (node.size() > 1)
++        {
++            lg2::warning(
++                "Multiple {MODE} MAC addresses found in gzip xml header",
++                "MODE", mode);
++        }
++        return node[0];
++    };
++
++    macs.dedicated = getMac(
++        "Dedicated",
++        "/GSSKU/BoardInfo/Main/NIC/*[Mode = 'Dedicated']/MacAddr0");
++    macs.shared = getMac(
++        "Shared", "/GSSKU/BoardInfo/Main/NIC/*[Mode = 'Shared']/MacAddr0");
++
++    return macs;
+ }
+ 
+ std::optional<FruSections> findFRUHeader(
+@@ -968,16 +984,21 @@ std::pair<std::vector<uint8_t>, bool> readFRUContents(
+ 
+     if (sections->GigabyteXmlOffset != 0)
+     {
+-        std::string macAddress =
+-            parseMacFromGzipXmlHeader(reader, sections->GigabyteXmlOffset);
+-        if (!macAddress.empty())
++        // GB SKU XML stores both BMC NIC MACs in BoardInfo/Main/NIC.
++        // Publish the dedicated interface under BOARD_INFO_AM2 (existing
++        // convention) and the shared interface under BOARD_INFO_AM1.
++        GigabyteMacAddresses macs =
++            parseMacsFromGzipXmlHeader(reader, sections->GigabyteXmlOffset);
++        if (!macs.dedicated.empty())
+         {
+-            // launder the mac address as we expect into
+-            // BOARD_INFO_AM2 to allow the rest of the
+-            // system to use it
+-            std::string mac = std::format("MAC: {}", macAddress);
++            std::string mac = std::format("MAC: {}", macs.dedicated);
+             updateAddProperty(mac, "BOARD_INFO_AM2", device);
+         }
++        if (!macs.shared.empty())
++        {
++            std::string mac = std::format("MAC: {}", macs.shared);
++            updateAddProperty(mac, "BOARD_INFO_AM1", device);
++        }
+     }
+ 
+     return {device, true};
+diff --git a/src/fru_device/fru_utils.hpp b/src/fru_device/fru_utils.hpp
+index 5c406c3..66caa7b 100644
+--- a/src/fru_device/fru_utils.hpp
++++ b/src/fru_device/fru_utils.hpp
+@@ -237,4 +237,11 @@ bool updateAddProperty(const std::string& propertyValue,
+                        const std::string& propertyName,
+                        std::vector<uint8_t>& fruData);
+ 
+-std::string parseMacFromGzipXmlHeader(FRUReader& reader, off_t offset);
++struct GigabyteMacAddresses
++{
++    std::string dedicated;
++    std::string shared;
++};
++
++GigabyteMacAddresses parseMacsFromGzipXmlHeader(FRUReader& reader,
++                                                off_t offset);
+diff --git a/test/test_fru-utils.cpp b/test/test_fru-utils.cpp
+index d1734a7..d7778d6 100644
+--- a/test/test_fru-utils.cpp
++++ b/test/test_fru-utils.cpp
+@@ -813,10 +813,11 @@ constexpr auto gzip = std::to_array<uint8_t>(
+      0x63, 0x38, 0xb8, 0x03, 0x86, 0xdd, 0x7d, 0x1e, 0x15, 0xc1, 0xa2, 0x29,
+      0xcf, 0x01, 0x00, 0x00});
+ 
+-TEST(GzipUtils, parseMacFromGzipXmlHeader)
++TEST(GzipUtils, parseMacsFromGzipXmlHeader)
+ {
+     FRUReader reader(std::bind_front(getDataTempl, gzip));
+ 
+-    std::string mac = parseMacFromGzipXmlHeader(reader, 0);
+-    EXPECT_EQ(mac, "10:FF:E0:39:84:DC");
++    GigabyteMacAddresses macs = parseMacsFromGzipXmlHeader(reader, 0);
++    EXPECT_EQ(macs.dedicated, "10:FF:E0:39:84:DC");
++    EXPECT_EQ(macs.shared, "10:FF:E0:39:84:DD");
+ }
+-- 
+2.54.0 (Apple Git-157)
+

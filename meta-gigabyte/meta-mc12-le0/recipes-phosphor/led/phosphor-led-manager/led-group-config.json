@@ -1,0 +1,61 @@
+{
+    "leds": [
+        {
+            "group": "bmc_booted",
+            "members": [
+                {
+                    "Name": "led_bmc_heartbeat",
+                    "Action": "Blink",
+                    "DutyOn": 50,
+                    "Period": 1000,
+                    "Priority": "Blink"
+                },
+                {
+                    "Name": "led_front_status_green",
+                    "Action": "On",
+                    "DutyOn": 50,
+                    "Period": 0,
+                    "Priority": "Off"
+                },
+                {
+                    "Name": "led_front_status_amber",
+                    "Action": "Off",
+                    "Priority": "Blink"
+                }
+            ]
+        },
+        {
+            "group": "power_on",
+            "members": []
+        },
+        {
+            "group": "enclosure_identify",
+            "members": [
+                {
+                    "Name": "led_rear_id",
+                    "Action": "On",
+                    "DutyOn": 50,
+                    "Period": 0,
+                    "Priority": "On"
+                }
+            ]
+        },
+        {
+            "group": "enclosure_fault",
+            "members": [
+                {
+                    "Name": "led_front_status_green",
+                    "Action": "Off",
+                    "Priority": "Off"
+                },
+                {
+                    "Name": "led_front_status_amber",
+                    "Action": "Blink",
+                    "DutyOn": 50,
+                    "Period": 1000,
+                    "Priority": "Blink"
+                }
+            ]
+        }
+    ]
+}

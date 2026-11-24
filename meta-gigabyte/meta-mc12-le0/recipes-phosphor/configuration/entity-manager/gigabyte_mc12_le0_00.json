@@ -1,0 +1,178 @@
+{
+  "Exposes": [
+    {
+      "Address": "$address",
+      "Bus": "$bus",
+      "Name": "MC12-LE0-00 FRU  Eeeprom",
+      "Type": "EEPROM"
+    },
+    {
+      "Address": "0x4c",
+      "Bus": "14",
+      "Name": "X550_LAN_TEMP",
+      "Type": "TMP75"
+    },
+    {
+      "Address": "0x4d",
+      "Bus": "14",
+      "Name": "B550_FCH_TEMP",
+      "Type": "TMP75"
+    },
+    {
+      "Address": "0x4e",
+      "Bus": "14",
+      "Name": "VR_TEMP",
+      "Type": "TMP75"
+    },
+    {
+      "Address": "0x28",
+      "Bus": "14",
+      "Name": "RT_M2M",
+      "Type": "NCT7802"
+    },
+    {
+      "Address": "0x4c",
+      "Bus": "2",
+      "Name": "CPU_1",
+      "Type": "SBTSI"
+    },
+    {
+      "Address": "0x18",
+      "Bus": "5",
+      "Name": "DIMMA0_TEMP",
+      "Type": "JC42"
+    },
+    {
+      "Address": "0x1A",
+      "Bus": "5",
+      "Name": "DIMMA1_TEMP",
+      "Type": "JC42"
+    },
+    {
+      "Address": "0x19",
+      "Bus": "5",
+      "Name": "DIMMB0_TEMP",
+      "Type": "JC42"
+    },
+    {
+      "Address": "0x1b",
+      "Bus": "5",
+      "Name": "DIMMB1_TEMP",
+      "Type": "JC42"
+    },
+    {
+      "Connector": {
+        "Name": "CPU Fan Connector",
+        "Pwm": 0,
+        "Tachs": [
+          0
+        ],
+        "PwmName": "CPU_FAN_PWM"
+      },
+      "Index": 0,
+      "Name": "CPU_FAN",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Connector": {
+        "Name": "SYS_FAN1 Connector",
+        "Pwm": 2,
+        "Tachs": [
+          2
+        ],
+        "PwmName": "SYS_FAN1_PWM"
+      },
+      "Index": 2,
+      "Name": "SYS_FAN1",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Connector": {
+        "Name": "SYS_FAN2 Connector",
+        "Pwm": 3,
+        "Tachs": [
+          3
+        ],
+        "PwmName": "SYS_FAN2_PWM"
+      },
+      "Index": 3,
+      "Name": "SYS_FAN2",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Connector": {
+        "Name": "SYS_FAN4 Connector",
+        "Pwm": 4,
+        "Tachs": [
+          4
+        ],
+        "PwmName": "SYS_FAN4_PWM"
+      },
+      "Index": 4,
+      "Name": "SYS_FAN4",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Connector": {
+        "Name": "SYS_FAN3 Connector",
+        "Pwm": 5,
+        "Tachs": [
+          5
+        ],
+        "PwmName": "SYS_FAN3_PWM"
+      },
+      "Index": 5,
+      "Name": "SYS_FAN3",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Connector": {
+        "Name": "SYS_FAN5 Connector",
+        "Pwm": 6,
+        "Tachs": [
+          6
+        ],
+        "PwmName": "SYS_FAN5_PWM"
+      },
+      "Index": 6,
+      "Name": "SYS_FAN5",
+      "PowerState": "On",
+      "Type": "AspeedFan"
+    },
+    {
+      "Index": 3,
+      "Name": "A_VDDPS5",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
+    },
+    {
+      "Index": 5,
+      "Name": "VCORE",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
+    },
+    {
+      "Index": 6,
+      "Name": "P1V2_VDDQ",
+      "PowerState": "On",
+      "ScaleFactor": 1.0,
+      "Type": "ADC"
+    }
+  ],
+  "xyz.openbmc_project.Inventory.Decorator.Asset": {
+    "Manufacturer": "$BOARD_MANUFACTURER",
+    "Model": "$BOARD_PRODUCT_NAME",
+    "PartNumber": "$BOARD_PART_NUMBER",
+    "SerialNumber": "$BOARD_SERIAL_NUMBER"
+  },
+  "Name": "Gigabyte MC12-LE0-00",
+  "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'MC12-LE0-00', 'BOARD_MANUFACTURER': 'GIGABYTE'})",
+  "Type": "Board"
+}

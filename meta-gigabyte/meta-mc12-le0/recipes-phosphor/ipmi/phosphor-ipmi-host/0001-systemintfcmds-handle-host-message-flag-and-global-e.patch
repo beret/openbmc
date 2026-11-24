@@ -1,0 +1,111 @@
+From 2fecee97f1fd2c0a19b44821f5db2523819568ab Mon Sep 17 00:00:00 2001
+From: beret <69595+beret@users.noreply.github.com>
+Date: Tue, 17 Nov 2026 15:13:11 -0700
+Subject: [PATCH] systemintfcmds: accept host message-flag and global-enable
+ probes
+
+The Linux ipmi_si driver probes Set BMC Global Enables with the receive
+message queue interrupt bit cleared, then sends Clear Message Flags at
+boot.  The BMC rejected the former and returned 0xC1 for the latter, so
+the host logged:
+
+  ipmi_si IPI0001:00: The BMC does not support clearing the recv irq bit, compensating, but the BMC needs to be fixed.
+  ipmi_si IPI0001:00: Error clearing flags: c1
+
+Track the global enables byte so Get reflects Set, and accept Clear
+Message Flags as a no-op because Get Message Flags always reports zero.
+
+This is a generic phosphor-host-ipmid gap, not platform-specific: any
+OpenBMC BMC running the stock daemon over KCS/BT answers the same way.
+Cosmetic/compliance only; OpenBMC does not gate host interrupts on the
+bit and Linux already compensates.
+
+Upstream-Status: Pending
+
+Agent/generator: Oh My Pi harness, model opencode-go/deepseek-v4.1-flash.
+---
+ systemintfcmds.cpp | 43 +++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 35 insertions(+), 8 deletions(-)
+
+diff --git a/systemintfcmds.cpp b/systemintfcmds.cpp
+index 68c667c..f0be124 100644
+--- a/systemintfcmds.cpp
++++ b/systemintfcmds.cpp
+@@ -90,6 +90,14 @@ ipmi::RspType<uint8_t> ipmiAppGetMessageFlags()
+     return ipmi::responseSuccess(setEventMsgBufferNotSupported);
+ }
+ 
++namespace
++{
++constexpr uint8_t globalEnableRcvMsgQueueIntr = 0x01;
++constexpr uint8_t globalEnableSysEventLog = 0x08;
++
++uint8_t globalEnables = globalEnableRcvMsgQueueIntr | globalEnableSysEventLog;
++} // namespace
++
+ ipmi::RspType<bool,    // Receive Message Queue Interrupt Enabled
+               bool,    // Event Message Buffer Full Interrupt Enabled
+               bool,    // Event Message Buffer Enabled
+@@ -101,8 +109,9 @@ ipmi::RspType<bool,    // Receive Message Queue Interrupt Enabled
+               >
+     ipmiAppGetBMCGlobalEnable()
+ {
+-    return ipmi::responseSuccess(true, false, false, true, 0, false, false,
+-                                 false);
++    return ipmi::responseSuccess(
++        (globalEnables & globalEnableRcvMsgQueueIntr) != 0, false, false,
++        (globalEnables & globalEnableSysEventLog) != 0, 0, false, false, false);
+ }
+ 
+ ipmi::RspType<> ipmiAppSetBMCGlobalEnable(
+@@ -127,16 +136,29 @@ ipmi::RspType<> ipmiAppSetBMCGlobalEnable(
+         return ipmi::responseCommandNotAvailable();
+     }
+ 
+-    // Recv Message Queue and SEL are enabled by default.
+-    // Event Message buffer are disabled by default (not supported).
+-    // Any request that try to change the mask will be rejected
+-    if (!receiveMessageQueueInterruptEnabled || !systemEventLogEnable ||
+-        eventMessageBufferFullInterruptEnabled || eventMessageBufferEnabled ||
+-        OEM0Enabled || OEM1Enabled || OEM2Enabled || reserved)
++    // Only the receive message queue interrupt is writable.
++    if (!systemEventLogEnable || eventMessageBufferFullInterruptEnabled ||
++        eventMessageBufferEnabled || OEM0Enabled || OEM1Enabled ||
++        OEM2Enabled || reserved)
+     {
+         return ipmi::responseInvalidFieldRequest();
+     }
+ 
++    if (receiveMessageQueueInterruptEnabled)
++    {
++        globalEnables |= globalEnableRcvMsgQueueIntr;
++    }
++    else
++    {
++        globalEnables &= ~globalEnableRcvMsgQueueIntr;
++    }
++
++    return ipmi::responseSuccess();
++}
++
++// Get Message Flags always reports no flags, so nothing to clear.
++ipmi::RspType<> ipmiAppClearMessageFlags([[maybe_unused]] uint8_t flags)
++{
+     return ipmi::responseSuccess();
+ }
+ 
+@@ -166,6 +188,11 @@ void registerNetFnAppFunctions()
+                           ipmi::app::cmdGetBmcGlobalEnables,
+                           ipmi::Privilege::User, ipmiAppGetBMCGlobalEnable);
+ 
++    // <Clear Message Flags>
++    ipmi::registerHandler(ipmi::prioOpenBmcBase, ipmi::netFnApp,
++                          ipmi::app::cmdClearMessageFlags,
++                          ipmi::Privilege::Admin, ipmiAppClearMessageFlags);
++
+     // <Get Message Flags>
+     ipmi::registerHandler(ipmi::prioOpenBmcBase, ipmi::netFnApp,
+                           ipmi::app::cmdGetMessageFlags, ipmi::Privilege::Admin,
+-- 
+2.54.0 (Apple Git-157)
+

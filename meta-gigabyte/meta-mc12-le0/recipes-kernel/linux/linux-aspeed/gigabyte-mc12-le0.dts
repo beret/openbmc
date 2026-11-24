@@ -1,0 +1,536 @@
+// SPDX-License-Identifier: GPL-2.0+
+// Copyright (c) 2024 Johannes Truschnigg
+// Author: Johannes Truschnigg <johannes@truschnigg.info>
+// XXX This is a work in progress!
+/dts-v1/;
+
+#include "aspeed-g5.dtsi"
+#include <dt-bindings/gpio/aspeed-gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+
+/ {
+        model = "Gigabyte MC12-LE0 OpenBMC";
+        compatible = "gigabyte,mc12-le0-openbmc", "aspeed,ast2500";
+        aliases {
+                serial0 = &uart1;
+                serial4 = &uart5;
+                // ethernet0 = &mac0; // enabling this makes udev rename "eth0" to "end0"
+                // ethernet1 = &mac1; // enabling this makes udev rename "eth1" to "end1"
+        };
+        chosen {
+                stdout-path = &uart5;
+                bootargs = "console=ttyS4,115200 earlycon";
+        };
+
+        memory@80000000 {
+                device_type = "memory";
+                reg = <0x80000000 0x20000000>;
+        };
+
+        leds {
+                compatible = "gpio-leds";
+
+                led-uid {
+                        label = "led-rear-id";
+                        gpios = <&gpio 49 GPIO_ACTIVE_LOW>;
+                };
+
+                // GPIOG0 is the stock firmware's "live" LED: led_init()
+                // drives it and led_routine() toggles it once userspace is
+                // up. Keep it steady during boot; the bmc_booted LED group
+                // switches it to a 1 Hz blink after multi-user.target.
+                led-heartbeat {
+                        label = "led-bmc-heartbeat";
+                        gpios = <&gpio 48 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
+
+                // FP_1 pins 8/10: bicolor system status LED.
+                // Stock firmware names them LED_ST_G (50) and LED_ST_A (51),
+                // and drives them low for green/amber.
+                led-status-green {
+                        label = "led-front-status-green";
+                        gpios = <&gpio 50 GPIO_ACTIVE_LOW>;
+                        default-state = "on";
+                };
+
+                led-status-amber {
+                        label = "led-front-status-amber";
+                        gpios = <&gpio 51 GPIO_ACTIVE_LOW>;
+                };
+        };
+
+
+        reserved-memory {
+                #address-cells = <1>;
+                #size-cells = <1>;
+                ranges;
+
+                video_engine_memory: jpegbuffer {
+                        size = <0x02000000>;
+                        alignment = <0x01000000>;
+                        compatible = "shared-dma-pool";
+                        reusable;
+                };
+
+                // The AST2500 puts the host's VGA framebuffer in the top
+                // 16 MiB of a 512 MiB DRAM, and the VGA engine repaints it
+                // continuously -- a blank screen is 16 MiB of zeroes. Every
+                // 512 MiB Aspeed board reserves it with exactly this node
+                // (see the tyan/intel/inspur/asrock DTS files).
+                vga_memory: framebuffer@9f000000 {
+                        no-map;
+                        reg = <0x9f000000 0x01000000>;
+                };
+
+                // The host-push window (SMBIOS tables, BiosAttributes
+                // datasets...) sits immediately *below* the framebuffer.
+                // libgbtmisc.so's shm_get_addrinfo() derives it from the
+                // kernel command line as (mem=<N>MB) << 20 + 0x80000000, and
+                // the stock firmware's N is 480 -- 512 MiB less the 16 MiB
+                // framebuffer and this 16 MiB window -- which lands here.
+                // Putting the window at 0x9f000000 instead (as this board
+                // originally did) means the BIOS pushes into the framebuffer
+                // and the VGA engine wipes it before the BMC can read it.
+                hostif_memory: buffer@9e000000 {
+                        no-map;
+                        reg = <0x9e000000 0x01000000>;
+                };
+        };
+
+        iio-hwmon {
+                compatible = "iio-hwmon";
+                io-channels = <&adc 0>, <&adc 1>, <&adc 2>,
+                              <&adc 4>, <&adc 5>, <&adc 6>,
+                              <&adc 8>, <&adc 12>, <&adc 13>;
+        };
+
+};
+
+&fmc {
+        status = "okay";
+        flash@0 {
+                status = "okay";
+                m25p,fast-read;
+                label = "bmc";
+#include "openbmc-flash-layout-64.dtsi"
+        };
+};
+
+&spi1 {
+        status = "okay";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_spi1_default>;
+        flash@0 {
+                status = "okay";
+                m25p,fast-read;
+                label = "bios";
+                spi-rx-bus-width = <4>;
+                spi-tx-bus-width = <4>;
+                spi-max-frequency = <133000000>;
+        };
+};
+
+&lpc_snoop {
+        status = "okay";
+        snoop-ports = <0x80>;
+};
+
+&lpc_ctrl {
+        status = "okay";
+        // Direct userspace view of the host-push window above; see the
+        // reserved-memory node for why it is at 0x9e000000/16MiB.
+        memory-region = <&hostif_memory>;
+};
+
+&uart1 {
+        status = "okay";
+};
+
+&uart2 {
+        status = "okay";
+};
+
+&uart3 {
+        status = "okay";
+};
+
+/* 'Note that when UART1/2 on an AST2500 board are expected to be used as SUART1/2 for Host,
+the corresponding BMC UART driver should not be mounted. This can be done by modifying the
+DTS nodes of UARTs with status=”disabled”' ??? */
+
+&uart5 {
+        status = "okay";
+};
+
+&uart_routing {
+        status = "okay";
+};
+
+&kcs2 {
+        status = "okay";
+        aspeed,lpc-io-reg = <0xca8>;
+};
+
+&kcs3 {
+        status = "okay";
+        aspeed,lpc-io-reg = <0xca2>;
+};
+
+&gpio {
+        status = "okay";
+        gpio-line-names =
+        /*A0-A7*/       "","","","","","","","",
+        /*B0*/          "",
+        /*B1*/          "",
+        /*B2*/          "",
+        /*B3*/          "",
+        /*B5*/          "",
+        /*B5*/          "power-ok",
+        /*B6*/          "",
+        /*B7*/          "",
+        /*C0-C7*/       "","","","","","","","",
+        /*D0*/          "button-power-n",
+        /*D1*/          "control-power-n",
+        /*D2*/          "button-reset-n",
+        /*D3*/          "control-reset",
+        /*D4*/          "",
+        /*D5*/          "control-nmi",
+        /*D6*/          "",
+        /*D7*/          "",
+        /*E0-E7*/       "","","","","","","","",
+        /*F0-F7*/       "","","","","","","","",
+        /*G0*/          "",
+        /*G1*/          "led-rear-id",
+        /*G2*/          "",
+        /*G3*/          "",
+        /*G4*/          "",
+        /*G5*/          "",
+        /*G6*/          "",
+        /*G7*/          "",
+        /*H0-H7*/       "","","","","","","","",
+        /*I0-I7*/       "","","","","","","","",
+        /*J0-J7*/       "","","","","","","","",
+        /*K0-K7*/       "","","","","","","","",
+        /*L0-L7*/       "","","","","","","","",
+        /*M0*/          "",
+        /*M1*/          "",
+        /*M2*/          "",
+        /*M3*/          "",
+        /*M4*/          "dummy-post-complete",
+        /*M5*/          "",
+        /*M6*/          "",
+        /*M7*/          "",
+        /*N0-N7*/       "","","","","","","","",
+        /*O0-O7*/       "","","","","","","","",
+        /*P0-P7*/       "","","","","","","","",
+        /*Q0*/          "",
+        /*Q1*/          "",
+        /*Q2*/          "",
+        /*Q3*/          "",
+        /*Q4*/          "",
+        /*Q5*/          "",
+        /*Q6*/          "id-button",
+        /*Q7*/          "",
+        /*R0*/          "",
+        /*R1*/          "",
+        /*R2*/          "",
+        /*R3*/          "spi-bios-hold-n",
+        /*R4*/          "",
+        /*R5*/          "",
+        /*R6*/          "",
+        /*R7*/          "",
+        /*S0-S7*/       "","","","","","","","",
+        /*T0-T7*/       "","","","","","","","",
+        /*U0-U7*/       "","","","","","","","",
+        /*V0-V7*/       "","","","","","","","",
+        /*W0-W7*/       "","","","","","","","",
+        /*X0-X7*/       "","","","","","","","",
+        /*Y0-Y7*/       "","","","","","","","",
+        /*Z0*/          "",
+        /*Z1*/          "",
+        /*Z2*/          "",
+        /*Z3*/          "",
+        /*Z4*/          "",
+        /*Z5*/          "",
+        /*Z6*/          "",
+        /*Z7*/          "input-power-good", // GPIO 207 is always(?) high
+        /*AA0-AA7*/     "","","","","","","","",
+        /*AB0-AB7*/     "","","","","","","","",
+        /*AC0-AC7*/     "","","","","","","","";
+};
+
+/* NC-SI shared Intel 210 */
+&mac0 {
+        status = "okay";
+
+        phy-mode = "NC-SI";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_rmii1_default>;
+        use-ncsi;
+};
+
+/* RGMII RTL8211E */
+&mac1 {
+        status = "okay";
+        phy-mode = "rgmii";
+
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_mac2link_default &pinctrl_mdio2_default>;
+};
+
+&vhub {
+        status = "okay";
+};
+
+&adc {
+        status = "okay";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_adc0_default /* P12V_S5_SCALED P_12V */
+                &pinctrl_adc1_default /* P5V_S0_SCALED P_5V */
+                &pinctrl_adc2_default /* P3V3_S0_SCALED P_3V3 */
+                &pinctrl_adc4_default /* A_VDDPS5 P_VDDCR */
+                &pinctrl_adc5_default /* [[Some GPIO-related thingie?]] P_VBAT_SCALED P_VBAT */
+                &pinctrl_adc6_default /* VCORE P_VDDCR_MC12 */
+                &pinctrl_adc8_default /* P1V2_VDDQ_S3_S0 P_VDDQ */
+                &pinctrl_adc12_default /* P3V3_S5 P_3V3 */
+                &pinctrl_adc13_default>; /* A_VDD18S5 P_1V8 */
+};
+
+&video {
+        status = "okay";
+        memory-region = <&video_engine_memory>;
+};
+
+&i2c0 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c1 {
+        status = "okay";
+        multi-master;
+
+        /* XXX TODO: 0x73 */
+};
+
+&i2c2 {
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        multi-master;
+
+        /* AMD CPU temperature via sbtsi */
+        sbtsi@4c {
+                compatible = "amd,sbtsi";
+                reg = <0x4c>;
+        };
+        /* AMD SB-RMI mailbox: socket 0 sits at 78h, i.e. 0x3c on the bus */
+        sbrmi@3c {
+                compatible = "amd,sbrmi";
+                reg = <0x3c>;
+        };
+        /* XXX TODO: 0x0c */
+};
+
+&i2c3 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c4 {
+        status = "okay";
+        multi-master;
+
+        i2c-switch@71 {
+                compatible = "nxp,pca9545";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                reg = <0x71>;
+
+                imux14: i2c@0 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        reg = <0>;
+
+                        lm75@4c {
+                                compatible = "national,lm75", "ti,lm75";
+                                reg = <0x4c>;
+                        };
+
+                        lm75@4d {
+                                compatible = "national,lm75", "ti,lm75";
+                                reg = <0x4d>;
+                        };
+
+                        lm75@4e {
+                                compatible = "national,lm75", "ti,lm75";
+                                reg = <0x4e>;
+                        };
+
+                        // Only on the bus when host is powered up. RTD1 is the
+                        // M.2 thermistor; the driver leaves remote channels
+                        // disabled unless the channel is described here, and a
+                        // disabled channel means no temp1_input at all.
+                        //
+                        // Mode naming is inverted from what the datasheet
+                        // suggests: "thermal-diode" maps to RTD_MODE_CURRENT
+                        // (register 0x22 bit pair = 0b01) and reads the input
+                        // as open (124.875 C) on this board. "thermistor" maps
+                        // to 0b10, which reads the M.2 at ~31 C.
+                        nct7802@28 {
+                                compatible = "nuvoton,nct7802";
+                                reg = <0x28>;
+                                #address-cells = <1>;
+                                #size-cells = <0>;
+
+                                channel@1 {
+                                        reg = <1>;
+                                        sensor-type = "temperature";
+                                        temperature-mode = "thermistor";
+                                };
+                        };
+                };
+        };
+};
+
+&i2c5 {
+        status = "okay";
+        multi-master;
+
+        dimma0temp: temperature-sensor@18 {
+                compatible = "jedec,jc-42.4-temp";
+                reg = <0x18>;
+        };
+
+        dimma1temp: temperature-sensor@1a {
+                compatible = "jedec,jc-42.4-temp";
+                reg = <0x1a>;
+        };
+
+        dimmb0temp: temperature-sensor@19 {
+                compatible = "jedec,jc-42.4-temp";
+                reg = <0x19>;
+        };
+
+        dimmb1temp: temperature-sensor@1b {
+                compatible = "jedec,jc-42.4-temp";
+                reg = <0x1b>;
+        };
+
+        dimma0spd: eeprom@50 {
+                compatible = "ee1004";
+                reg = <0x50>;
+        };
+
+        dimma1spd: eeprom@51 {
+                compatible = "ee1004";
+                reg = <0x51>;
+        };
+
+        dimmb0spd: eeprom@52 {
+                compatible = "ee1004";
+                reg = <0x52>;
+        };
+
+        dimmb1spd: eeprom@53 {
+                compatible = "ee1004";
+                reg = <0x53>;
+        };
+        /* XXX TODO: 0x30 0x35 */
+};
+
+&i2c6 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c7 {
+        status = "okay";
+        multi-master;
+
+        /* FRU EEPROM (not actually FRU 1.0 compliant) */
+        ami_megarac_fru: eeprom@51 {
+                compatible = "atmel,24c256";
+                reg = <0x51>;
+        };
+};
+
+&i2c8 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c9 { // SLOW
+        status = "okay";
+        multi-master;
+};
+
+&i2c10 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c11 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c12 {
+        status = "okay";
+        multi-master;
+};
+
+&i2c13 {
+        status = "okay";
+        multi-master;
+};
+
+&pwm_tacho {
+        status = "okay";
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_pwm0_default &pinctrl_pwm1_default
+                     &pinctrl_pwm2_default &pinctrl_pwm3_default
+                     &pinctrl_pwm4_default &pinctrl_pwm5_default
+                     &pinctrl_pwm6_default &pinctrl_pwm7_default>;
+
+        fan@0 { /* CPU FAN */
+                reg = <0x00>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x00>;
+        };
+
+        fan@1 { /* Not connected to any fan header */
+                reg = <0x01>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x01>;
+        };
+
+        fan@2 { /* SYS_FAN1 */
+                reg = <0x02>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x02>;
+        };
+
+        fan@3 { /* SYS_FAN2 */
+                reg = <0x03>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x03>;
+        };
+
+        fan@4 { /* SYS_FAN4 */
+                reg = <0x04>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x04>;
+        };
+
+        fan@5 { /* SYS_FAN3 */
+                reg = <0x05>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x05>;
+        };
+
+        fan@6 { /* SYS_FAN5 */
+                reg = <0x06>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x06>;
+        };
+
+        fan@7 { // This pwm knob actually controls the PCSPKR volume (255 := min) :-))
+                reg = <0x07>;
+                aspeed,fan-tach-ch = /bits/ 8 <0x07>;
+        };
+};
