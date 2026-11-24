@@ -82,9 +82,11 @@ for IPMI. Redfish writes the same D-Bus property without an SDR record.
 The host script is tracked in the infrastructure repository as
 `hosts/toby/scripts/node804-fanfeed.py`.
 
-- `NVMe_Temp` = maximum of every temperature sensor on both NVMe disks
-  (`nvme_smart_health_information_log.temperature_sensors[]`, falling back to
-  `temperature`).
+- `NVMe_Temp` = maximum of every temperature sensor on the two PCIe-card NVMe
+  disks (`nvme_smart_health_information_log.temperature_sensors[]`, falling
+  back to `temperature`). The onboard M.2 boot disk at
+  `/dev/disk/by-path/pci-0000:06:00.0-nvme-1` is excluded by the host script;
+  its nearby board sensor (`RT_M2M`) is not part of this policy.
 - `HDD_Temp` = maximum `temperature.current` across all SAS HDDs in the drive
   chamber. Use a serial/device allowlist; do not include boot SSDs.
 - Do not sum temperatures. Fan control needs the hottest sensor, not an
