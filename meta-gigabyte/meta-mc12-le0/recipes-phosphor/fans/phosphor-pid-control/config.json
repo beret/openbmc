@@ -111,6 +111,14 @@
       "ignoreDbusMinMax": true,
       "timeout": 0,
       "unavailableAsFailed": false
+    },
+    {
+      "name": "RT_M2M",
+      "type": "temp",
+      "readPath": "/xyz/openbmc_project/sensors/temperature/RT_M2M",
+      "ignoreDbusMinMax": true,
+      "timeout": 0,
+      "unavailableAsFailed": false
     }
   ],
   "zones": [
@@ -207,9 +215,9 @@
         {
           "name": "temp_passive",
           "type": "stepwise",
-          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN"],
+          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
           "setpoint": 30.0,
-          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN"],
+          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M"],
           "pid": {
             "samplePeriod": 0.5,
             "positiveHysteresis": 1.0,

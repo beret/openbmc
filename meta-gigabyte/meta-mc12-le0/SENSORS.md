@@ -105,7 +105,9 @@ cannot be expressed as Entity Manager temperature or voltage entries.
 
 - **`RT_M2M`** is the M.2 module thermistor, not a room-temperature sensor:
   NCT7802Y remote channel RTD1 behind the I2C mux. The stock `GPU_TEMP` template name is
-  inherited from AMI's shared templates and says nothing about a GPU.
+  inherited from AMI's shared templates and says nothing about a GPU. It is an
+  input to the `temp_passive` board fan group; a missing host-off sensor is
+  acceptable.
 - **`CPU0_DTS`** is the die-temperature form of the CPU reading, produced by a
   `MINUS` operation over two sources: the temperature itself
   (`APML_CPU`, SB-TSI) and `APML_CPU_INFO` (SB-RMI CPU metadata). So it is a
