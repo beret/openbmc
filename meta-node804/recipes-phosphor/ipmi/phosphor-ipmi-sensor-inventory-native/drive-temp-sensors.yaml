@@ -1,0 +1,51 @@
+# Node 804 host-fed temperatures.
+#
+# IPMI Set Sensor Reading (NetFn 0x04, Cmd 0x30) writes the D-Bus Value of the
+# ExternalSensor created by dbus-sensors. The reading byte is scaled by M/B;
+# with M = 1 and scale = 0 the payload byte is whole degrees Celsius.
+#
+#   ipmitool raw 0x04 0x30 0xE0 0x00 <degC> 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+#   ipmitool raw 0x04 0x30 0xE1 0x00 <degC> 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+#
+# 0xE0 = NVMe_Temp, 0xE1 = HDD_Temp.
+0xE0:
+  sensorType: 0x01
+  sensorReadingType: 0x01
+  path: /xyz/openbmc_project/sensors/temperature/NVMe_Temp
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorName: NVMe_Temp
+  multiplierM: 1
+  offsetB: 0
+  bExp: 0
+  rExp: 0
+  scale: 0
+  sensorUnits1: 0x01
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: double
+
+0xE1:
+  sensorType: 0x01
+  sensorReadingType: 0x01
+  path: /xyz/openbmc_project/sensors/temperature/HDD_Temp
+  serviceInterface: org.freedesktop.DBus.Properties
+  readingType: readingData
+  mutability: Mutability::Write|Mutability::Read
+  sensorName: HDD_Temp
+  multiplierM: 1
+  offsetB: 0
+  bExp: 0
+  rExp: 0
+  scale: 0
+  sensorUnits1: 0x01
+  interfaces:
+    xyz.openbmc_project.Sensor.Value:
+      Value:
+        Offsets:
+          0xFF:
+            type: double

@@ -1,0 +1,25 @@
+{
+  "Exposes": [
+    {
+      "Name": "NVMe_Temp",
+      "Type": "ExternalSensor",
+      "Units": "DegreesC",
+      "MinValue": 0,
+      "MaxValue": 100,
+      "Timeout": 90,
+      "PowerState": "On"
+    },
+    {
+      "Name": "HDD_Temp",
+      "Type": "ExternalSensor",
+      "Units": "DegreesC",
+      "MinValue": 0,
+      "MaxValue": 100,
+      "Timeout": 90,
+      "PowerState": "On"
+    }
+  ],
+  "Name": "Node 804 drive temperatures",
+  "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'MC12-LE0-00', 'BOARD_MANUFACTURER': 'GIGABYTE'})",
+  "Type": "Board"
+}
