@@ -72,9 +72,13 @@ if [ "$skip_systemd" != 1 ] && [ "$(id -u)" -ne 0 ]; then
 fi
 
 src_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-for asset in openbmc-sensors.py openbmc-sensors.example.json openbmc-sensors.service.in; do
+for asset in openbmc-sensors.py openbmc-sensors.service.in; do
     [ -f "$src_dir/$asset" ] || die "missing $src_dir/$asset"
 done
+if [ ! -e "$config" ]; then
+    [ -f "$src_dir/openbmc-sensors.example.json" ] ||
+        die "missing $src_dir/openbmc-sensors.example.json"
+fi
 
 [ -d "$install_dir" ] || install -d -m 0755 "$install_dir"
 config_dir=$(dirname -- "$config")
@@ -87,9 +91,8 @@ if [ -f "$src_dir/install-openbmc-sensors.sh" ]; then
     copy_if_different "$src_dir/install-openbmc-sensors.sh" \
         "$install_dir/openbmc-sensors-install.sh" 0755
 fi
-for asset in openbmc-sensors.example.json openbmc-sensors.service.in; do
-    copy_if_different "$src_dir/$asset" "$install_dir/$asset" 0644
-done
+copy_if_different "$src_dir/openbmc-sensors.service.in" \
+    "$install_dir/openbmc-sensors.service.in" 0644
 
 if [ ! -e "$config" ]; then
     install -m 0600 "$src_dir/openbmc-sensors.example.json" "$config"
