@@ -52,10 +52,14 @@ For a pool-backed host, use `--install-dir` and `--config` on the pool and
 ## Verify
 
 ```sh
+openbmc-sensors.py --config /etc/openbmc-sensors/config.json --check
 openbmc-sensors.py --config /etc/openbmc-sensors/config.json --dry-run --once
 systemctl status openbmc-sensors.service
 journalctl -u openbmc-sensors.service -f
 ```
+
+`--check` returns nonzero when the selected transport is missing its URL,
+host/user, or password; the installer uses it to decide whether to start.
 
 IPMI transports preflight `Get Sensor Reading` for `0xE0`/`0xE1`. A BMC without
 the matching SDR records returns `0xcb`; the bridge logs the missing sensor and

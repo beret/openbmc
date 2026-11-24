@@ -441,6 +441,7 @@ def main() -> int:
     )
     parser.add_argument("--config", default=DEFAULT_CONFIG_PATH, help=f"JSON config (default {DEFAULT_CONFIG_PATH})")
     parser.add_argument("--once", action="store_true", help="run one cycle and exit")
+    parser.add_argument("--check", action="store_true", help="validate config and credentials, then exit")
     parser.add_argument("--dry-run", action="store_true", help="print values and payload, do not contact the BMC")
     parser.add_argument("--verbose", action="store_true", help="debug logging")
     args = parser.parse_args()
@@ -454,6 +455,25 @@ def main() -> int:
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         LOG.error("config: %s", exc)
         return 2
+
+    if args.check:
+        transport = cfg["transport"]
+        try:
+            if transport == "redfish":
+                if not cfg["redfish"]["url"]:
+                    raise ValueError("redfish.url is empty")
+                block_password(cfg["redfish"], "Redfish")
+            elif transport == "ipmi-lanplus":
+                ipmi = cfg["ipmi"]
+                if not ipmi["host"] or not ipmi["user"]:
+                    raise ValueError("ipmi.host and ipmi.user are required")
+                block_password(ipmi, "IPMI")
+            elif transport != "ipmi-open":
+                raise ValueError(f"unsupported transport {transport!r}")
+        except (OSError, ValueError) as exc:
+            LOG.error("config check failed: %s", exc)
+            return 1
+        return 0
 
     LOG.info("transport=%s interval=%ss NVMe=%s HDD=%s",
              cfg["transport"], cfg["interval"], cfg["nvme"], cfg["hdd"])
