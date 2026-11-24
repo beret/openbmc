@@ -1,0 +1,16 @@
+[Unit]
+Description=OpenBMC host sensor bridge
+Documentation=file:@SCRIPT@
+After=network-online.target
+Wants=network-online.target
+@MOUNT_LINE@
+
+[Service]
+Type=simple
+ExecStart=@PYTHON@ @SCRIPT@ --config @CONFIG@
+Restart=always
+RestartSec=10
+User=root
+
+[Install]
+WantedBy=multi-user.target

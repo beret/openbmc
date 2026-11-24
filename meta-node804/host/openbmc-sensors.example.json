@@ -1,0 +1,16 @@
+{
+  "transport": "redfish",
+  "redfish_url": "https://bmc.example",
+  "redfish_user": "admin",
+  "redfish_password_file": "/etc/openbmc-sensors/redfish.pass",
+  "chassis": "chassis",
+  "verify_tls": false,
+  "nvme": [],
+  "nvme_exclude": [
+    "/dev/disk/by-path/pci-0000:06:00.0-nvme-1"
+  ],
+  "hdd": [],
+  "hdd_type": "scsi",
+  "interval": 30,
+  "standby_temp": 30
+}

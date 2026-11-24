@@ -27,7 +27,7 @@ board layer and never install this layer's recipes.
 Each fan belongs to exactly one zone. `SYS_FAN1`, `SYS_FAN2` and `SYS_FAN4` are
 removed from zone 2 in `config.node804.json`.
 
-## Host feed contract
+## Host bridge contract
 
 The BMC creates two writable `dbus-sensors` ExternalSensors. The host pushes a
 value every 30 s; after 90 s without a push the sensor value becomes `NaN`,
@@ -43,7 +43,7 @@ value is unchanged: each D-Bus write pets the ExternalSensor watchdog.
 
 At BMC boot with the host already on, zones 3 and 4 start from `NaN` and hold
 their 100 % failsafe until the first host push (up to one interval). This is
-the same behavior as a stopped feed; start the host service early, or accept
+the same behavior as a stopped bridge; start the host service early, or accept
 the short fan burst.
 
 ### Redfish
@@ -84,8 +84,10 @@ for IPMI. Redfish writes the same D-Bus property without an SDR record.
 
 ## Host-side aggregation
 
-The host script is tracked in the infrastructure repository as
-`hosts/toby/scripts/node804-fanfeed.py`.
+The host script is tracked in this layer under
+`meta-node804/host/`. That directory also carries a generic installer, unit
+template and example config; the infrastructure repository supplies the
+site-specific deployment, credentials and POSTINIT handling.
 
 - `NVMe_Temp` = maximum of every temperature sensor on the two PCIe-card NVMe
   disks (`nvme_smart_health_information_log.temperature_sensors[]`, falling
