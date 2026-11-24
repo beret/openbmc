@@ -90,7 +90,8 @@ The host script is tracked in the infrastructure repository as
 - `HDD_Temp` = maximum `temperature.current` across every rotational,
   non-NVMe block device (`/sys/block/*/queue/rotational == 1`). This picks up
   all SAS/SATA HDDs and excludes NVMe, boot SATA SSDs, loop, dm and md. An
-  explicit `hdd` list overrides discovery.
+  explicit `hdd` list overrides discovery. The host polls HDDs with
+  `smartctl -n standby` so sleeping drives are not spun up.
 - Do not sum temperatures. Fan control needs the hottest sensor, not an
   accumulated value.
 - If all HDDs are in standby, push a cool value (30 C) so the HDD zone stays at
