@@ -1,7 +1,15 @@
 # meta-node804: MC12-LE0 in the Node 804 chassis
 
-This layer is the **system-specific** fan/thermal policy for the Fractal Design
-Node 804 build. It does not change the generic `mc12-le0` machine or the board
+This layer is mostly a zonal fan/thermal policy. using BMC and OS sensors for a Gigabyte MC12-LE0 MB in a dual-chamber SFF Node 804 case.
+Current zones: CPU, MB Chamber, NVMe card, HDD chamber
+
+`/host/` includes the systemd service for exposing OS sensors as ExternalSensor objects inside OpenBMC so OpenBMC can gracefully accept readings over IPMI/Redfish, or fallback to safe defaults. Currently polls (30s) across rotational disks, additional NVME disks not already served by the MB's temp sensor in the onboard M.2 slot, and a Broadcom SAS HBA.
+
+Tested under TrueNAS Scale Linux 25, but no special dependencies.
+
+MB fan mapping is not standardized, aside from CPU_FAN. Temp/PWM response per sensor/zone based on component tolerances and how loathsome its fans are.
+
+Generic board commits and the basic CPU/MB sensor fan policy are also in this node804 branch, but in the `meta-gigabyte/meta-mc12-le0` board
 layer.
 
 ## Select the build
@@ -24,16 +32,14 @@ board layer and never install this layer's recipes.
 | 3 | `SYS_FAN1` | `NVMe_Temp` | NVMe blower only |
 | 4 | `SYS_FAN2`, `SYS_FAN4` | `HDD_Temp` | drive exhaust + drive intake |
 
-Each fan belongs to exactly one zone. `SYS_FAN1`, `SYS_FAN2` and `SYS_FAN4` are
-removed from zone 2 in `config.node804.json`.
+Each fan belongs to exactly one zone but sensors can appear in multiple zones or response curves.
 
-## Host bridge contract
+## Host bridge service
 
 The BMC creates three writable `dbus-sensors` ExternalSensors. The host pushes a
-value every 30 s; after 90 s without a push the sensor value becomes `NaN`.
-That fails the corresponding NVMe/HDD zone to `failsafePercent: 100`; the HBA
-value is a missing-acceptable input in zone 2, so a missing HBA is simply
-excluded from that zone's maximum.
+value every 30s but you can go as fast as the BMC lets you. After 90s without a push the sensor value becomes `NaN`.
+That fails the corresponding NVMe/HDD zone to `failsafePercent: 100`. HBA
+temp is a missing-acceptable input in zone 2 (MB chamber), so that falls back to other signals.
 
 | Sensor | D-Bus object | Redfish `MemberId` | IPMI sensor |
 | --- | --- | --- | --- |
@@ -44,10 +50,11 @@ excluded from that zone's maximum.
 All three accept whole degrees Celsius, 0-100. Send all three every cycle even
 when a value is unchanged: each D-Bus write pets the ExternalSensor watchdog.
 
-At BMC boot with the host already on, zones 3 and 4 start from `NaN` and hold
-their 100 % failsafe until the first host push (up to one interval). This is
-the same behavior as a stopped bridge; start the host service early, or accept
-the short fan burst.
+Unlike the stock MB sensors, ExternalSensors shouldn't disappear due to host-side power cycles, so those should gracefully recover from missing data once you send a fresh update.
+Creating the sensors is a blocking task for starting `swampd`, just like waiting for CPU_TEMP to start the generic MB policy on the board layer.
+
+(If you lose stock MB sensors, they will not be reintegrated until you reboot phosphor-pid-control or the whole BMC. (dynamic sensor discovery is an oBMC option, but more of a hassle.)
+
 
 ### Redfish
 
@@ -65,6 +72,8 @@ Content-Type: application/json
 The chassis name comes from `GET /redfish/v1/Chassis`. Use a user with
 `ConfigureComponents` privilege. The PATCH is one request for all sensors; if
 one `MemberId` is missing the whole update fails.
+
+This currently relies on using the external network to reach the BMC, as the internal virtual ethernet bridge interface is not implemented.
 
 ### IPMI
 
@@ -92,14 +101,13 @@ for IPMI. Redfish writes the same D-Bus property without an SDR record.
 The host script is tracked in this layer under
 `meta-node804/host/`. That directory also carries a generic installer, unit
 template and example config; the infrastructure repository supplies the
-site-specific deployment, credentials and POSTINIT handling.
+site-specific deployment, credentials, and POSTINIT handling.
 
 - `NVMe_Temp` = maximum of every temperature sensor on the two PCIe-card NVMe
   disks (`nvme_smart_health_information_log.temperature_sensors[]`, falling
   back to `temperature`). The onboard M.2 boot disk at
   `/dev/disk/by-path/pci-0000:06:00.0-nvme-1` is excluded by the host script;
-  its nearby board sensor (`RT_M2M`) is an input to the zone 2 board passive
-  fan group, not the NVMe blower zone.
+  its nearby board sensor (`RT_M2M`) is an input to the zone 2 motherboard/passive components group.
 - `HDD_Temp` = maximum `temperature.current` across every rotational,
   non-NVMe block device (`/sys/block/*/queue/rotational == 1`). This picks up
   all SAS/SATA HDDs and excludes NVMe, boot SATA SSDs, loop, dm and md. An
@@ -109,12 +117,9 @@ site-specific deployment, credentials and POSTINIT handling.
   `storcli /c0 show temperature J`, read as root through `/dev/mpt3ctl`. It is
   a missing-acceptable input to the zone 2 motherboard passive group, so it
   affects the max only when the host bridge is publishing it.
-- Do not sum temperatures. Fan control needs the hottest sensor, not an
-  accumulated value.
-- If all HDDs are in standby, push a cool value (30 C) so the HDD zone stays at
-  its floor. If an NVMe or HDD group cannot be read, stop pushing that group so
-  its zone fails safe after 90 s. A missing HBA only removes it from the zone 2
-  maximum.
+- If all HDDs are in standby, sets a dummy 0 C reading, the policy already has minimum-output.
+  If all of an NVMe or HDD group cannot be read, stop sending that group so
+  its zone fails safe after 90 s.
 
 ## Files
 
