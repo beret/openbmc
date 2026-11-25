@@ -14,14 +14,18 @@ layer.
 
 ## Select the build
 
+```sh
+cd openbmc/
+./setup mc12-le0-node804
+bitbake obmc-phosphor-image
+```
+local build.conf example has build caching turned on for builds across the generic gigabyte target and this one.
+
+If you're setting manually:
 ```conf
 MACHINE = "mc12-le0-node804"
 BBLAYERS += "/path/to/openbmc/meta-node804"
 ```
-
-Add `meta-node804` after `meta-gigabyte/meta-mc12-le0` in `bblayers.conf`.
-Builds with `MACHINE = "mc12-le0"` keep the generic two-zone policy from the
-board layer and never install this layer's recipes.
 
 ## Fan zones
 
