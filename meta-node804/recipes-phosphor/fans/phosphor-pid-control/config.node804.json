@@ -151,7 +151,7 @@
   "zones": [
     {
       "id": 1,
-      "minThermalOutput": 25.0,
+      "minThermalOutput": 10.0,
       "failsafePercent": 100.0,
       "cycleIntervalTimeMS": 100,
       "updateThermalsTimeMS": 1000,
@@ -159,7 +159,9 @@
         {
           "name": "CPU_Fan",
           "type": "fan",
-          "inputs": ["CPU_FAN"],
+          "inputs": [
+            "CPU_FAN"
+          ],
           "setpoint": 128.0,
           "pid": {
             "samplePeriod": 0.1,
@@ -178,7 +180,9 @@
         {
           "name": "temp1",
           "type": "stepwise",
-          "inputs": ["CPU"],
+          "inputs": [
+            "CPU"
+          ],
           "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
@@ -223,7 +227,10 @@
         {
           "name": "SYS_Fans",
           "type": "fan",
-          "inputs": ["SYS_FAN3", "SYS_FAN5"],
+          "inputs": [
+            "SYS_FAN3",
+            "SYS_FAN5"
+          ],
           "setpoint": 128.0,
           "pid": {
             "samplePeriod": 0.1,
@@ -242,9 +249,29 @@
         {
           "name": "temp_passive",
           "type": "stepwise",
-          "inputs": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M", "HBA_Temp"],
+          "inputs": [
+            "DIMMA0",
+            "DIMMA1",
+            "DIMMB0",
+            "DIMMB1",
+            "VR",
+            "B550_FCH",
+            "X550_LAN",
+            "RT_M2M",
+            "HBA_Temp"
+          ],
           "setpoint": 30.0,
-          "missingIsAcceptable": ["DIMMA0", "DIMMA1", "DIMMB0", "DIMMB1", "VR", "B550_FCH", "X550_LAN", "RT_M2M", "HBA_Temp"],
+          "missingIsAcceptable": [
+            "DIMMA0",
+            "DIMMA1",
+            "DIMMB0",
+            "DIMMB1",
+            "VR",
+            "B550_FCH",
+            "X550_LAN",
+            "RT_M2M",
+            "HBA_Temp"
+          ],
           "pid": {
             "samplePeriod": 0.5,
             "positiveHysteresis": 1.0,
@@ -254,10 +281,10 @@
               "0": 35,
               "1": 45,
               "2": 55,
-              "3": 63,
-              "4": 70,
-              "5": 76,
-              "6": 80
+              "3": 60,
+              "4": 65,
+              "5": 69,
+              "6": 74
             },
             "output": {
               "0": 10,
@@ -273,7 +300,9 @@
         {
           "name": "temp_cpu",
           "type": "stepwise",
-          "inputs": ["CPU"],
+          "inputs": [
+            "CPU"
+          ],
           "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
@@ -310,7 +339,7 @@
     },
     {
       "id": 3,
-      "minThermalOutput": 25.0,
+      "minThermalOutput": 10.0,
       "failsafePercent": 100.0,
       "cycleIntervalTimeMS": 100,
       "updateThermalsTimeMS": 1000,
@@ -318,7 +347,9 @@
         {
           "name": "NVMe_Fan",
           "type": "fan",
-          "inputs": ["SYS_FAN1"],
+          "inputs": [
+            "SYS_FAN1"
+          ],
           "setpoint": 128.0,
           "pid": {
             "samplePeriod": 0.1,
@@ -337,7 +368,9 @@
         {
           "name": "temp_nvme",
           "type": "stepwise",
-          "inputs": ["NVMe"],
+          "inputs": [
+            "NVMe"
+          ],
           "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
@@ -345,24 +378,26 @@
             "negativeHysteresis": 1.0,
             "isCeiling": false,
             "reading": {
-              "0": 45,
-              "1": 50,
+              "0": 40,
+              "1": 45,
               "2": 55,
-              "3": 60,
-              "4": 65,
-              "5": 70,
-              "6": 75,
-              "7": 80
+              "3": 58,
+              "4": 60,
+              "5": 63,
+              "6": 66,
+              "7": 68,
+              "8": 70
             },
             "output": {
-              "0": 30,
-              "1": 40,
-              "2": 50,
-              "3": 60,
-              "4": 70,
-              "5": 80,
-              "6": 90,
-              "7": 100
+              "0": 10,
+              "1": 25,
+              "2": 40,
+              "3": 50,
+              "4": 60,
+              "5": 70,
+              "6": 80,
+              "7": 90,
+              "8": 100
             }
           }
         }
@@ -370,7 +405,7 @@
     },
     {
       "id": 4,
-      "minThermalOutput": 30.0,
+      "minThermalOutput": 20.0,
       "failsafePercent": 100.0,
       "cycleIntervalTimeMS": 100,
       "updateThermalsTimeMS": 1000,
@@ -378,7 +413,10 @@
         {
           "name": "HDD_Fans",
           "type": "fan",
-          "inputs": ["SYS_FAN2", "SYS_FAN4"],
+          "inputs": [
+            "SYS_FAN2",
+            "SYS_FAN4"
+          ],
           "setpoint": 128.0,
           "pid": {
             "samplePeriod": 0.1,
@@ -397,7 +435,9 @@
         {
           "name": "temp_hdd",
           "type": "stepwise",
-          "inputs": ["HDD"],
+          "inputs": [
+            "HDD"
+          ],
           "setpoint": 30.0,
           "pid": {
             "samplePeriod": 0.5,
@@ -406,19 +446,21 @@
             "isCeiling": false,
             "reading": {
               "0": 35,
-              "1": 38,
+              "1": 40,
               "2": 42,
-              "3": 46,
-              "4": 50,
-              "5": 55
+              "3": 45,
+              "4": 48,
+              "5": 50,
+              "6": 52
             },
             "output": {
-              "0": 30,
-              "1": 40,
-              "2": 55,
-              "3": 70,
-              "4": 85,
-              "5": 100
+              "0": 20,
+              "1": 30,
+              "2": 40,
+              "3": 55,
+              "4": 70,
+              "5": 85,
+              "6": 100
             }
           }
         }
