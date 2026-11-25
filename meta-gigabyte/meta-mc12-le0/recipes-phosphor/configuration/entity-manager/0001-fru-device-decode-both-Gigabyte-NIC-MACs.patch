@@ -136,10 +136,10 @@ index 5c406c3..66caa7b 100644
 +GigabyteMacAddresses parseMacsFromGzipXmlHeader(FRUReader& reader,
 +                                                off_t offset);
 diff --git a/test/test_fru-utils.cpp b/test/test_fru-utils.cpp
-index d1734a7..d7778d6 100644
+index 10a54d4e1..52c3e204b 100644
 --- a/test/test_fru-utils.cpp
 +++ b/test/test_fru-utils.cpp
-@@ -813,10 +813,11 @@ constexpr auto gzip = std::to_array<uint8_t>(
+@@ -857,12 +857,13 @@ constexpr auto gzip = std::to_array<uint8_t>(
       0x63, 0x38, 0xb8, 0x03, 0x86, 0xdd, 0x7d, 0x1e, 0x15, 0xc1, 0xa2, 0x29,
       0xcf, 0x01, 0x00, 0x00});
  
@@ -154,6 +154,8 @@ index d1734a7..d7778d6 100644
 +    EXPECT_EQ(macs.dedicated, "10:FF:E0:39:84:DC");
 +    EXPECT_EQ(macs.shared, "10:FF:E0:39:84:DD");
  }
+ 
+ TEST(GetEepromByteLocation, EightBitPagesThroughDeviceAddress)
 -- 
 2.54.0 (Apple Git-157)
 
