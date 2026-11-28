@@ -1,0 +1,13 @@
+# SEL callout fallbacks. These IDs are outside the board SDR range so a
+# threshold or watchdog record without a callout does not resolve to a real
+# sensor. CPU and DIMM inventory do not exist here, so they have no entries.
+/xyz/openbmc_project/inventory/system/chassis/motherboard:
+  sensorID: 0x0c
+  sensorType: 0xC7
+  eventReadingType: 0x03
+  offset: 0x00
+/xyz/openbmc_project/inventory/system:
+  sensorID: 0x0b
+  sensorType: 0x12
+  eventReadingType: 0x6F
+  offset: 0x02

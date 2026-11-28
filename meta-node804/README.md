@@ -99,9 +99,11 @@ Set Sensor Reading returns success for an unknown sensor number, so it cannot
 detect a BMC still running an older image; Get Sensor Reading returns `0xcb`
 until the three SDR entries exist.
 
-The SDR entries in
-`recipes-phosphor/ipmi/phosphor-ipmi-sensor-inventory-native/` are required only
-for IPMI. Redfish writes the same D-Bus property without an SDR record.
+The Node 804 SDR entries are appended to the board's static map in
+`recipes-phosphor/ipmi/phosphor-ipmi-sensor-inventory-native/`; they are
+required only for IPMI. Redfish writes the same D-Bus property without an SDR
+record. Their numbers are pinned (`0xE0`–`0xE2`), so the host preflight stays
+valid when board sensors come and go.
 
 ## Host-side aggregation
 

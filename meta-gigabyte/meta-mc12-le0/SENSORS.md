@@ -127,9 +127,11 @@ cannot be expressed as Entity Manager temperature or voltage entries.
 - **`APML_CAPPING`** is the package power *limit* (watts, writable on a
   supporting CPU); **`APML_PWR`** is package power *consumption*. The `sbrmi`
   hwmon also exposes `power1_input` in microwatts.
-- **Sensor numbers (`no`)** are stock SDR record numbers. OpenBMC's ipmid
-  assigns numbers sequentially from the D-Bus sensor tree, so these values
-  cannot be matched without unnecessarily patching ipmid.
+- **Sensor numbers (`no`)** are stock SDR record numbers. The board's static
+  SDR map (`recipes-phosphor/ipmi/phosphor-ipmi-sensor-inventory-native/config.yaml`)
+  reuses them where the same sensor exists; the four DIMMs use `0x21`–`0x24`.
+  Sensors with no readable D-Bus value have no record. The SEL callout
+  fallbacks use `0x0B` (system) and `0x0C` (motherboard), outside the SDR range.
 
 ## Address convention
 
