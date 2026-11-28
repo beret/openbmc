@@ -3,9 +3,10 @@ DISTRO ?= "openbmc-phosphor"
 PACKAGE_CLASSES ?= "package_ipk"
 SANITY_TESTED_DISTROS:append ?= " *"
 #EXTRA_IMAGE_FEATURES = "allow-root-login"
-# Bring-up/test builds only. This enables optional, non-production board
-# diagnostics. It does not enable root login. Do not ship a bring-up image.
-#require conf/distro/include/mc12-le0-bringup.inc
+# Bring-up/test builds only. Select the tracked board test profile; it enables
+# optional, non-production diagnostics and does not enable root login. Do not
+# ship a bring-up image.
+#DISTRO = "openbmc-phosphor-mc12-le0-bringup"
 USER_CLASSES ?= "buildstats"
 PATCHRESOLVE = "noop"
 BB_DISKMON_DIRS = "\
