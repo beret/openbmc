@@ -3,10 +3,13 @@ Description=Ensure the MC12-LE0 admin account and groups exist
 After=local-fs.target systemd-sysusers.service
 Before=xyz.openbmc_project.User.Manager.service
 Before=mc12-le0-admin-provision.service
+OnFailure=mc12-le0-admin-failure.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+TimeoutStartSec=30
+Restart=no
 ExecStart=/usr/bin/mc12-le0-admin-provision --ensure-account
 StandardOutput=journal
 StandardError=journal

@@ -9,6 +9,8 @@ SRC_URI = " \
     file://mc12-le0-admin-provision;subdir=admin-provision \
     file://mc12-le0-admin-account.service;subdir=admin-provision \
     file://mc12-le0-admin-provision.service;subdir=admin-provision \
+    file://mc12-le0-admin-failure;subdir=admin-provision \
+    file://mc12-le0-admin-failure.service;subdir=admin-provision \
     "
 S = "${UNPACKDIR}/admin-provision"
 
@@ -27,7 +29,10 @@ RDEPENDS:${PN} += " \
     systemd \
     "
 
-FILES:${PN} += "${sysconfdir}/default/admin-provision"
+FILES:${PN} += " \
+    ${sysconfdir}/default/admin-provision \
+    ${systemd_system_unitdir}/mc12-le0-admin-failure.service \
+    "
 CONFFILES:${PN} += "${sysconfdir}/default/admin-provision"
 
 do_install() {
@@ -36,8 +41,10 @@ do_install() {
     install -d ${D}${sysconfdir}/default
 
     install -m 0755 ${S}/mc12-le0-admin-provision ${D}${bindir}/
+    install -m 0755 ${S}/mc12-le0-admin-failure ${D}${bindir}/
     install -m 0644 ${S}/mc12-le0-admin-account.service ${D}${systemd_system_unitdir}/
     install -m 0644 ${S}/mc12-le0-admin-provision.service ${D}${systemd_system_unitdir}/
+    install -m 0644 ${S}/mc12-le0-admin-failure.service ${D}${systemd_system_unitdir}/
     printf '%s\n' \
         "ADMIN_FORCE_PASSWORD_CHANGE=${ADMIN_FORCE_PASSWORD_CHANGE}" \
         "ADMIN_FALLBACK_HASH=${DEFAULT_OPENBMC_PASSWORD}" \

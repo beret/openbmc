@@ -2,12 +2,14 @@
 Description=Provision the MC12-LE0 admin password from the FRU serial
 After=basic.target mc12-le0-admin-account.service xyz.openbmc_project.User.Manager.service
 Wants=mc12-le0-admin-account.service xyz.openbmc_project.User.Manager.service
+OnFailure=mc12-le0-admin-failure.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 StateDirectory=mc12-le0
 TimeoutStartSec=120
+Restart=no
 ExecStart=/usr/bin/mc12-le0-admin-provision
 StandardOutput=journal
 StandardError=journal

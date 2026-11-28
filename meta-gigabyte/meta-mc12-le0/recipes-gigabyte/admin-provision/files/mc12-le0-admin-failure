@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# Report a failed admin account or provisioning step. This unit is deliberately
+# read-only: it must not create, reset, or lock accounts, and it must not block
+# the user manager or bmcweb from starting.
+
+set -u
+
+ADMIN="admin"
+
+log()
+{
+    echo "mc12-le0-admin-failure: $*"
+}
+
+log "admin provisioning failed; root fallback remains"
+
+if id "$ADMIN" >/dev/null 2>&1; then
+    log "account: $(id "$ADMIN" 2>&1)"
+    log "password: $(passwd -S "$ADMIN" 2>&1)"
+else
+    log "account missing"
+fi
+
+if [ -r /etc/os-release ]; then
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    log "image: ${BUILD_ID:-${VERSION_ID:-unknown}}"
+fi
+
+if [ -r /var/lib/mc12-le0/admin-provisioned ]; then
+    log "state:"
+    sed 's/^/  /' /var/lib/mc12-le0/admin-provisioned 2>/dev/null
+else
+    log "state: absent"
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --failed --no-legend 2>/dev/null |
+        sed -n '1,10p' |
+        while IFS= read -r line; do
+            log "failed: $line"
+        done
+fi
+
+exit 0
