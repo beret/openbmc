@@ -162,20 +162,34 @@ std::optional<uint8_t> readI2cByte(uint8_t bus, uint8_t address,
 // the only field that lets us pair an EEPROM with its SMBIOS Type 17 entry.
 std::string readSpdSerial(uint8_t bus, uint8_t address)
 {
-    std::string serial;
-    bool nonzero = false;
-    for (int i = 0; i < 4; ++i)
-    {
-        const auto byte =
-            readI2cByte(bus, address, static_cast<uint8_t>(0x45 + i));
-        if (!byte)
+    const auto readOnce = [&]() -> std::optional<std::string> {
+        std::string serial;
+        bool nonzero = false;
+        for (int i = 0; i < 4; ++i)
         {
-            return {};
+            const auto byte =
+                readI2cByte(bus, address, static_cast<uint8_t>(0x45 + i));
+            if (!byte)
+            {
+                return std::nullopt;
+            }
+            nonzero = nonzero || (*byte != 0);
+            serial += toHex(*byte, 2);
         }
-        nonzero = nonzero || (*byte != 0);
-        serial += toHex(*byte, 2);
+        return nonzero ? serial : std::string{};
+    };
+
+    const auto first = readOnce();
+    if (!first)
+    {
+        return {};
     }
-    return nonzero ? serial : std::string{};
+    const auto second = readOnce();
+    if (!second || *first != *second)
+    {
+        return {};
+    }
+    return *first;
 }
 
 std::optional<std::vector<uint8_t>> readSpd(const fs::path& path)
