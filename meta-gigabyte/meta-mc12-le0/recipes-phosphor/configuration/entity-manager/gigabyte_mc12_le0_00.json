@@ -10,55 +10,325 @@
       "Address": "0x4c",
       "Bus": "14",
       "Name": "X550_LAN_TEMP",
-      "Type": "TMP75"
+      "Type": "TMP75",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 85,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 95,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x4d",
       "Bus": "14",
       "Name": "B550_FCH_TEMP",
-      "Type": "TMP75"
+      "Type": "TMP75",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 85,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 95,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x4e",
       "Bus": "14",
       "Name": "VR_TEMP",
-      "Type": "TMP75"
+      "Type": "TMP75",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 90,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 100,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x28",
       "Bus": "14",
       "Name": "RT_M2M",
-      "Type": "NCT7802"
+      "Type": "NCT7802",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 70,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 80,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x4c",
       "Bus": "2",
       "Name": "CPU_1",
-      "Type": "SBTSI"
+      "Type": "SBTSI",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 75,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 90,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x18",
       "Bus": "5",
       "Name": "DIMMA0_TEMP",
-      "Type": "JC42"
+      "Type": "JC42",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 75,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 85,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x1A",
       "Bus": "5",
       "Name": "DIMMA1_TEMP",
-      "Type": "JC42"
+      "Type": "JC42",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 75,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 85,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x19",
       "Bus": "5",
       "Name": "DIMMB0_TEMP",
-      "Type": "JC42"
+      "Type": "JC42",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 75,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 85,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Address": "0x1b",
       "Bus": "5",
       "Name": "DIMMB1_TEMP",
-      "Type": "JC42"
+      "Type": "JC42",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 5,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 75,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 85,
+          "Hysteresis": 1.0
+        }
+      ]
     },
     {
       "Connector": {
@@ -72,7 +342,34 @@
       "Index": 0,
       "Name": "CPU_FAN",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Connector": {
@@ -86,7 +383,34 @@
       "Index": 2,
       "Name": "SYS_FAN1",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Connector": {
@@ -100,7 +424,34 @@
       "Index": 3,
       "Name": "SYS_FAN2",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Connector": {
@@ -114,7 +465,34 @@
       "Index": 4,
       "Name": "SYS_FAN4",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Connector": {
@@ -128,7 +506,34 @@
       "Index": 5,
       "Name": "SYS_FAN3",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Connector": {
@@ -142,28 +547,145 @@
       "Index": 6,
       "Name": "SYS_FAN5",
       "PowerState": "On",
-      "Type": "AspeedFan"
+      "Type": "AspeedFan",
+      "MaxReading": 10000,
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 150
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 8000
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 10000
+        }
+      ]
     },
     {
       "Index": 3,
       "Name": "A_VDDPS5",
       "PowerState": "On",
       "ScaleFactor": 1.0,
-      "Type": "ADC"
+      "Type": "ADC",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0.8,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 0.85,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 0.95,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 1.0,
+          "Hysteresis": 0.01
+        }
+      ]
     },
     {
       "Index": 5,
       "Name": "VCORE",
       "PowerState": "On",
       "ScaleFactor": 1.0,
-      "Type": "ADC"
+      "Type": "ADC",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 0.6,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 0.75,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 1.55,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 1.6,
+          "Hysteresis": 0.01
+        }
+      ]
     },
     {
       "Index": 6,
       "Name": "P1V2_VDDQ",
       "PowerState": "On",
       "ScaleFactor": 1.0,
-      "Type": "ADC"
+      "Type": "ADC",
+      "Thresholds": [
+        {
+          "Direction": "less than",
+          "Name": "lower critical",
+          "Severity": 1,
+          "Value": 1.08,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "less than",
+          "Name": "lower non critical",
+          "Severity": 0,
+          "Value": 1.14,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 1.26,
+          "Hysteresis": 0.01
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 1.32,
+          "Hysteresis": 0.01
+        }
+      ]
     }
   ],
   "xyz.openbmc_project.Inventory.Decorator.Asset": {

@@ -1,0 +1,82 @@
+{
+  "Exposes": [
+    {
+      "Name": "NVMe_Temp",
+      "Type": "ExternalSensor",
+      "Units": "DegreesC",
+      "MinValue": 0,
+      "MaxValue": 100,
+      "Timeout": 90,
+      "PowerState": "On",
+      "Thresholds": [
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 70,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 80,
+          "Hysteresis": 1.0
+        }
+      ]
+    },
+    {
+      "Name": "HDD_Temp",
+      "Type": "ExternalSensor",
+      "Units": "DegreesC",
+      "MinValue": 0,
+      "MaxValue": 100,
+      "Timeout": 90,
+      "PowerState": "On",
+      "Thresholds": [
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 50,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 55,
+          "Hysteresis": 1.0
+        }
+      ]
+    },
+    {
+      "Name": "HBA_Temp",
+      "Type": "ExternalSensor",
+      "Units": "DegreesC",
+      "MinValue": 0,
+      "MaxValue": 100,
+      "Timeout": 90,
+      "PowerState": "On",
+      "Thresholds": [
+        {
+          "Direction": "greater than",
+          "Name": "upper non critical",
+          "Severity": 0,
+          "Value": 80,
+          "Hysteresis": 1.0
+        },
+        {
+          "Direction": "greater than",
+          "Name": "upper critical",
+          "Severity": 1,
+          "Value": 95,
+          "Hysteresis": 1.0
+        }
+      ]
+    }
+  ],
+  "Name": "Node 804 host sensors",
+  "Probe": "xyz.openbmc_project.FruDevice({'BOARD_PRODUCT_NAME': 'MC12-LE0-00', 'BOARD_MANUFACTURER': 'GIGABYTE'})",
+  "Type": "Board"
+}

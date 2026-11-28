@@ -38,6 +38,9 @@ BBLAYERS += "/path/to/openbmc/meta-node804"
 
 Each fan belongs to exactly one zone but sensors can appear in multiple zones or response curves.
 
+Fan tach limits are Node 804-specific; other MC12-LE0 builds keep the board
+layer's generic limits.
+
 ## Host bridge service
 
 The BMC creates three writable `dbus-sensors` ExternalSensors. The host pushes a
@@ -130,7 +133,8 @@ site-specific deployment, credentials, and POSTINIT handling.
 | Path | Purpose |
 | --- | --- |
 | `conf/machine/mc12-le0-node804.conf` | inherits `mc12-le0`, selects this policy |
-| `entity-manager/node804-drive-temps.json` | three ExternalSensors |
+| `entity-manager/node804-fans.json` | Node 804 fan limits, replacing the board defaults |
+| `entity-manager/node804-host-sensors.json` | three host-fed ExternalSensors |
 | `phosphor-pid-control/config.node804.json` | four-zone static PID policy |
-| `phosphor-pid-control/20-wait-drive-sensors.conf` | waits for all three sensors before swampd starts |
-| `phosphor-ipmi-sensor-inventory-native/drive-temp-sensors.yaml` | IPMI sensor numbers and D-Bus mapping |
+| `phosphor-pid-control/20-wait-host-sensors.conf` | waits for all three sensors before swampd starts |
+| `phosphor-ipmi-sensor-inventory-native/host-sensors.yaml` | IPMI sensor numbers and D-Bus mapping |

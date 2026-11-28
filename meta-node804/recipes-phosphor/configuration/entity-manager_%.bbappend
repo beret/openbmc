@@ -1,9 +1,14 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/entity-manager:"
-SRC_URI:append = " file://node804-drive-temps.json"
+SRC_URI:append = " \
+    file://node804-fans.json \
+    file://node804-host-sensors.json \
+    "
 
-# Entity Manager merges every configuration whose Probe matches, so this file
-# adds the three host-fed sensors without touching the board JSON.
+# node804-fans.json replaces the board layer's generic fan records via
+# DisableNode; FOUND() makes that run after the board config.
 do_install:append:mc12-le0-node804() {
-    install -m 0444 ${UNPACKDIR}/node804-drive-temps.json -D \
+    install -m 0444 ${UNPACKDIR}/node804-fans.json -D \
+        -t ${D}${datadir}/entity-manager/configurations/node804
+    install -m 0444 ${UNPACKDIR}/node804-host-sensors.json -D \
         -t ${D}${datadir}/entity-manager/configurations/node804
 }
