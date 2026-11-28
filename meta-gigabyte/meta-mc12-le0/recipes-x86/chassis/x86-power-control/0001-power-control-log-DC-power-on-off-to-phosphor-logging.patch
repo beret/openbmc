@@ -1,0 +1,71 @@
+From 8894070aafb64fb8440b0bdb6c281734d9f39adc Mon Sep 17 00:00:00 2001
+From: OpenBMC <openbmc@localhost>
+Date: Fri, 27 Nov 2026 18:42:02 -0700
+Subject: [PATCH] power-control: log DC power on/off to phosphor-logging
+
+Upstream-Status: Pending
+
+---
+ src/power_control.cpp | 37 +++++++++++++++++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+
+diff --git a/src/power_control.cpp b/src/power_control.cpp
+index 020066f..3ce666b 100644
+--- a/src/power_control.cpp
++++ b/src/power_control.cpp
+@@ -35,6 +35,7 @@
+ #include <chrono>
+ #include <filesystem>
+ #include <fstream>
++#include <map>
+ #include <optional>
+ #include <regex>
+ #include <string_view>
+@@ -545,11 +546,47 @@ static void savePowerState(const PowerState state)
+                      std::string{getChassisState(state)});
+     });
+ }
++static void logPowerStateChange(bool powerOn)
++{
++    const std::string message = powerOn ? "Host system DC power is on"
++                                        : "Host system DC power is off";
++    conn->async_method_call(
++        [](boost::system::error_code ec) {
++            if (ec)
++            {
++                lg2::error(
++                    "Failed to create power state log entry: {ERROR}",
++                    "ERROR", ec.message());
++            }
++        },
++        "xyz.openbmc_project.Logging", "/xyz/openbmc_project/logging",
++        "xyz.openbmc_project.Logging.Create", "Create", message,
++        "xyz.openbmc_project.Logging.Entry.Level.Informational",
++        std::map<std::string, std::string>{});
++}
++
+ static void setPowerState(const PowerState state)
+ {
++    const std::string_view oldChassisState = getChassisState(powerState);
++    const std::string_view newChassisState = getChassisState(state);
++
+     powerState = state;
+     logStateTransition(state);
+ 
++    if (oldChassisState != newChassisState)
++    {
++        if (newChassisState ==
++            "xyz.openbmc_project.State.Chassis.PowerState.On")
++        {
++            logPowerStateChange(true);
++        }
++        else if (newChassisState ==
++                 "xyz.openbmc_project.State.Chassis.PowerState.Off")
++        {
++            logPowerStateChange(false);
++        }
++    }
++
+     hostIface->set_property("CurrentHostState",
+                             std::string(getHostState(powerState)));
+ 

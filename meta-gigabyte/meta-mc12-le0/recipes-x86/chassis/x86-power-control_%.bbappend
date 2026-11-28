@@ -2,6 +2,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 
 SRC_URI += " \
     file://power-config-host0.json \
+    file://0001-power-control-log-DC-power-on-off-to-phosphor-logging.patch \
     "
 
 # This board routes the front-panel power/reset buttons through the BMC: the
