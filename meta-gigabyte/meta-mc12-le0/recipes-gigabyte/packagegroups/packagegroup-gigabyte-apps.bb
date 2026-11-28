@@ -22,6 +22,7 @@ RDEPENDS:${PN}-flash = " \
 
 SUMMARY:${PN}-system = "Gigabyte System"
 RDEPENDS:${PN}-system = " \
+        admin-provision \
         phosphor-host-postd \
         phosphor-post-code-manager \
         phosphor-power-regulators \

@@ -1,0 +1,121 @@
+#!/bin/sh
+#
+# First-boot provisioning for the non-root MC12-LE0 admin account.
+#
+# The image ships admin/0penBmc as the initial bmcweb login fallback when no
+# valid serial is available. On first boot, prefer the board serial from Entity
+# Manager when it is a valid 11- or 12-character alphanumeric value. Invalid or
+# missing serial data leaves the fallback.
+#
+# The password is marked expired after this runs. The first login must use
+# bmcweb, which requires changing the password; SSH, Redfish, and the web
+# interface work after that change. Set ADMIN_FORCE_PASSWORD_CHANGE=0 in
+# local.conf if bmcweb's change flow is unavailable; root access remains
+# unchanged for now.
+#
+# This script never logs the serial or the password.
+
+set -u
+
+ADMIN="admin"
+DEFAULT_PASSWORD="0penBmc"
+ASSET_PATH=/xyz/openbmc_project/inventory/system/board/Gigabyte_MC12_LE0_00
+ASSET_IFACE=xyz.openbmc_project.Inventory.Decorator.Asset
+STATE_DIR=/var/lib/mc12-le0
+MARKER="${STATE_DIR}/admin-provisioned"
+
+# shellcheck disable=SC1091
+[ -r /etc/default/admin-provision ] && . /etc/default/admin-provision
+FORCE_CHANGE="${ADMIN_FORCE_PASSWORD_CHANGE:-1}"
+
+log()
+{
+    echo "mc12-le0-admin-provision: $*"
+}
+
+# 11- and 12-character alphanumeric serials are accepted as-is. Stock uses the
+# last 11 characters; this intentionally accepts 12 too. Anything else falls
+# back to the shipped 0penBmc password.
+is_valid_serial()
+{
+    serial="$1"
+    case "$serial" in
+    *[!A-Za-z0-9]*)
+        return 1
+        ;;
+    esac
+    [ "${#serial}" -eq 11 ] || [ "${#serial}" -eq 12 ]
+}
+
+read_serial()
+{
+    i=0
+    while [ "$i" -lt 30 ]; do
+        serial="$(busctl get-property xyz.openbmc_project.EntityManager \
+            "$ASSET_PATH" "$ASSET_IFACE" SerialNumber 2>/dev/null |
+            sed -n 's/^s //p' | tr -d '"')"
+        serial="$(printf '%s' "$serial" | tr -d '[:space:]')"
+        if [ -n "$serial" ]; then
+            printf '%s' "$serial"
+            return 0
+        fi
+        i=$((i + 1))
+        sleep 1
+    done
+    return 1
+}
+
+ensure_admin()
+{
+    id "$ADMIN" >/dev/null 2>&1 && return 0
+    [ -n "${ADMIN_FALLBACK_HASH:-}" ] || return 1
+
+    useradd -m -N -s /bin/sh \
+        -G redfish,priv-admin,ipmi,hostconsole \
+        -p "$ADMIN_FALLBACK_HASH" "$ADMIN"
+}
+
+set_admin_password()
+{
+    # chpasswd hashes the plaintext through PAM. If pam_pwquality rejects the
+    # serial, put the precomputed 0penBmc hash back; no runtime hash helper is
+    # needed.
+    if printf '%s:%s\n' "$ADMIN" "$1" | chpasswd; then
+        return 0
+    fi
+
+    log "PAM rejected the FRU serial password; restoring fallback"
+    [ -n "${ADMIN_FALLBACK_HASH:-}" ] || return 1
+    id "$ADMIN" >/dev/null 2>&1 || return 1
+    usermod -p "$ADMIN_FALLBACK_HASH" "$ADMIN" || return 1
+    return 1
+}
+
+mkdir -p "$STATE_DIR"
+
+if ! ensure_admin; then
+    log "failed to ensure ${ADMIN} account"
+    exit 1
+fi
+
+serial="$(read_serial || true)"
+if [ -n "${serial:-}" ] && is_valid_serial "$serial"; then
+    if set_admin_password "$serial"; then
+        log "${ADMIN} password set from FRU serial"
+    else
+        log "keeping ${DEFAULT_PASSWORD} fallback for ${ADMIN}"
+    fi
+else
+    log "FRU serial missing or invalid; keeping ${DEFAULT_PASSWORD} fallback"
+fi
+
+if [ "$FORCE_CHANGE" = "1" ]; then
+    if passwd -e "$ADMIN" >/dev/null 2>&1; then
+        log "${ADMIN} password marked expired"
+    else
+        log "could not mark ${ADMIN} password expired; leaving it usable"
+    fi
+fi
+
+: > "$MARKER"
+chmod 600 "$MARKER"

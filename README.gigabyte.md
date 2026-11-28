@@ -98,9 +98,13 @@ With a resulting `image-bmc` flashed to the MC12-LE0, the board's BMC-exclusive
 network port will be functional at 1Gbps link speed, and auto-configure IPv4
 (DHCP) and IPv6 (SLAAC / DHCPv6) addresses.
 
-SSH login to the BMC will work with default OpenBMC credentials, as well as
-access via HTTPS to the [bmcweb](https://github.com/openbmc/bmcweb)-provided
-web interface.
+Initial login is via the [bmcweb](https://github.com/openbmc/bmcweb)-provided
+web interface as the non-root `admin` user. The first-boot service uses the
+board serial as the initial password when it is a valid 11- or 12-character
+alphanumeric value, otherwise it leaves the `0penBmc` fallback. bmcweb requires
+a password change at that first login; SSH, Redfish, and the web interface are
+available after the change. Root login remains enabled with the OpenBMC default
+password.
 
 Power and reset control of the host works.
 

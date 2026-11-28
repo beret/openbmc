@@ -1,0 +1,16 @@
+[Unit]
+Description=Provision the MC12-LE0 admin password from the FRU serial
+ConditionPathExists=!/var/lib/mc12-le0/admin-provisioned
+After=basic.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StateDirectory=mc12-le0
+TimeoutStartSec=120
+ExecStart=/usr/bin/mc12-le0-admin-provision
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
