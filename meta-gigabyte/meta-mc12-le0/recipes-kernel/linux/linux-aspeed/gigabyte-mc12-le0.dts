@@ -143,21 +143,28 @@
         memory-region = <&hostif_memory>;
 };
 
+/*
+ * UART1 and UART2 are the host's COM1/COM2 (SuperIO logical devices on the
+ * LPC bus).  The BMC must not drive them: SOL routes UART4 to UART1 and
+ * opens ttyS3, so a Linux 8250 driver on UART1 would steal the bytes that
+ * are meant for the host.  Keep the BMC drivers detached.
+ */
 &uart1 {
-        status = "okay";
+        status = "disabled";
 };
 
 &uart2 {
-        status = "okay";
+        status = "disabled";
 };
 
 &uart3 {
         status = "okay";
 };
 
-/* 'Note that when UART1/2 on an AST2500 board are expected to be used as SUART1/2 for Host,
-the corresponding BMC UART driver should not be mounted. This can be done by modifying the
-DTS nodes of UARTs with status=”disabled”' ??? */
+/* Stock firmware uses ttyS3 (UART4) as its SOL port. */
+&uart4 {
+        status = "okay";
+};
 
 &uart5 {
         status = "okay";
