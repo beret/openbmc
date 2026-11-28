@@ -30,6 +30,7 @@ RDEPENDS:${PN}-system = " \
         host-if-gadget \
         ami-smbios \
         smbios-mdr \
+        dimm-inventory \
         phosphor-pid-control \
         phosphor-software-manager \
         iperf3 \
