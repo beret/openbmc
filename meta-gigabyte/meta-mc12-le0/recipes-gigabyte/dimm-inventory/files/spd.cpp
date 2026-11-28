@@ -180,9 +180,11 @@ std::optional<SpdInfo> decodeDdr4Spd(const std::vector<uint8_t>& spd)
                                 (static_cast<uint32_t>(spd[326]) << 8) |
                                 (static_cast<uint32_t>(spd[327]) << 16) |
                                 (static_cast<uint32_t>(spd[328]) << 24);
-        // Many consumer modules leave the serial unprogrammed; say so rather
-        // than publishing "0x00000000" as if it were a real serial.
-        info.serialNumber = (serial == 0) ? "" : toHex(serial, 8);
+        // Serial is printed in byte order, matching the host SMBIOS string.
+        char serialBuf[9];
+        std::snprintf(serialBuf, sizeof(serialBuf), "%02X%02X%02X%02X",
+                      spd[325], spd[326], spd[327], spd[328]);
+        info.serialNumber = (serial == 0) ? "" : serialBuf;
     }
 
     return info;

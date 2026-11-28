@@ -220,6 +220,8 @@ std::vector<MemoryDevice> readMemoryDevices(const std::string& path)
                 MemoryDevice dev;
                 dev.deviceLocator = stringAt(strings, body[off + 0x10]);
                 dev.bankLocator = stringAt(strings, body[off + 0x11]);
+                dev.manufacturer = stringAt(strings, body[off + 0x16]);
+                dev.serialNumber = stringAt(strings, body[off + 0x17]);
                 dev.partNumber = stringAt(strings, body[off + 0x1a]);
                 dev.capacityMiB = capacityMiB;
                 dev.configuredSpeedMhz = rd16(body, off + 0x20);

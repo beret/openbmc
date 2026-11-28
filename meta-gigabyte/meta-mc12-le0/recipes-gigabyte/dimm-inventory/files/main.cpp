@@ -111,6 +111,73 @@ void selectSpdPage0(uint8_t bus)
     (void)std::system(command.c_str());
 }
 
+void selectSpdPage1(uint8_t bus)
+{
+    const std::string busArg = std::to_string(bus);
+    const std::string command =
+        "/usr/sbin/i2cset -f -y " + busArg +
+        " 0x37 0x00 >/dev/null 2>&1; /usr/sbin/i2cget -f -y " + busArg +
+        " 0x36 >/dev/null 2>&1";
+    (void)std::system(command.c_str());
+}
+
+std::string toHex(uint32_t value, int width)
+{
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "%0*X", width, value);
+    return buf;
+}
+
+std::optional<uint8_t> readI2cByte(uint8_t bus, uint8_t address,
+                                   uint8_t offset)
+{
+    char command[128];
+    std::snprintf(command, sizeof(command),
+                  "/usr/sbin/i2cget -f -y %u 0x%02x 0x%02x 2>/dev/null",
+                  static_cast<unsigned>(bus),
+                  static_cast<unsigned>(address),
+                  static_cast<unsigned>(offset));
+    FILE* pipe = ::popen(command, "r");
+    if (pipe == nullptr)
+    {
+        return std::nullopt;
+    }
+    char line[32] = {};
+    const bool got = std::fgets(line, sizeof(line), pipe) != nullptr;
+    (void)::pclose(pipe);
+    if (!got)
+    {
+        return std::nullopt;
+    }
+    unsigned value = 0;
+    if (std::sscanf(line, "0x%x", &value) != 1 || value > 0xff)
+    {
+        return std::nullopt;
+    }
+    return static_cast<uint8_t>(value);
+}
+
+// Page 1 carries the module serial at SPD bytes 325-328. Read it even when
+// the page-1 CRC is unprogrammed: the serial is stable across reads and is
+// the only field that lets us pair an EEPROM with its SMBIOS Type 17 entry.
+std::string readSpdSerial(uint8_t bus, uint8_t address)
+{
+    std::string serial;
+    bool nonzero = false;
+    for (int i = 0; i < 4; ++i)
+    {
+        const auto byte =
+            readI2cByte(bus, address, static_cast<uint8_t>(0x45 + i));
+        if (!byte)
+        {
+            return {};
+        }
+        nonzero = nonzero || (*byte != 0);
+        serial += toHex(*byte, 2);
+    }
+    return nonzero ? serial : std::string{};
+}
+
 std::optional<std::vector<uint8_t>> readSpd(const fs::path& path)
 {
     // Read exactly one page. std::ifstream's filebuf asks for ~8 KiB, and
@@ -184,9 +251,38 @@ std::string eccEnum(uint8_t eccWidthBits)
     return p + "MultiBitECC";
 }
 
-// Publishes one DIMM. `smbiosDev` is the matching SMBIOS Type 17 entry when the
-// host has pushed its tables, and nullptr otherwise; it carries the board
-// silkscreen name and the trained speed, neither of which is in the SPD.
+// Fixed SPD-address-to-slot mapping for this board. Used only when the host
+// has not supplied a Type 17 entry; serial matching takes precedence.
+std::string boardLocator(uint8_t bus, uint8_t address)
+{
+    if (bus != 5)
+    {
+        return {};
+    }
+    switch (address)
+    {
+        case 0x50:
+            return "DIMM_P0_A0";
+        case 0x51:
+            return "DIMM_P0_B0";
+        case 0x52:
+            return "DIMM_P0_A1";
+        case 0x53:
+            return "DIMM_P0_B1";
+        default:
+            return {};
+    }
+}
+
+bool isPlaceholder(const std::string& value)
+{
+    return value.empty() || value == "Unknown" || value == "Not Specified" ||
+           value == "To Be Filled By O.E.M." || value == "None";
+}
+
+// Publishes one DIMM. `smbiosDev` is the matching SMBIOS Type 17 entry when
+// the host has pushed its tables, and nullptr otherwise; it carries the board
+// locator, serial, part/manufacturer and trained speed.
 void publishDimm(sdbusplus::asio::object_server& server,
                  const std::string& deviceName, uint8_t bus, uint8_t address,
                  const dimm::SpdInfo& info,
@@ -208,15 +304,17 @@ void publishDimm(sdbusplus::asio::object_server& server,
     // What the board calls it, when the host has told us.
     const std::string smbiosLocator =
         (smbiosDev != nullptr) ? smbiosDev->deviceLocator : std::string{};
-    const std::string locator =
-        smbiosLocator.empty() ? i2cLocator : smbiosLocator;
+    const std::string bakedLocator = boardLocator(bus, address);
+    const std::string locator = !smbiosLocator.empty()
+                                    ? smbiosLocator
+                                    : (!bakedLocator.empty() ? bakedLocator
+                                                             : i2cLocator);
 
     auto item = server.add_interface(path, itemIface);
     // The silkscreen name already reads as a DIMM label, so only the i2c
     // fallback gets the noun in front of it.
-    item->register_property("PrettyName", smbiosLocator.empty()
-                                              ? "DIMM " + i2cLocator
-                                              : smbiosLocator);
+    item->register_property(
+        "PrettyName", locator == i2cLocator ? "DIMM " + i2cLocator : locator);
     item->register_property("Present", true);
     item->initialize();
     keepAlive.push_back(item);
@@ -260,30 +358,51 @@ void publishDimm(sdbusplus::asio::object_server& server,
     dimmIfaceObj->initialize();
     keepAlive.push_back(dimmIfaceObj);
 
-    // Page 1 carries the SPD part number, but this board's host leaves the
-    // EEPROM on page 1 and the kernel cannot switch pages. Use the Type 17
-    // part number instead when the host has pushed its tables.
-    const std::string partNumber =
+    std::string partNumber =
         !info.partNumber.empty()
             ? info.partNumber
             : (smbiosDev != nullptr ? smbiosDev->partNumber : std::string{});
+    if (isPlaceholder(partNumber))
+    {
+        partNumber.clear();
+    }
+
+    std::string serialNumber =
+        !info.serialNumber.empty()
+            ? info.serialNumber
+            : (smbiosDev != nullptr ? smbiosDev->serialNumber : std::string{});
+    if (isPlaceholder(serialNumber))
+    {
+        serialNumber.clear();
+    }
+
+    std::string manufacturer =
+        (smbiosDev != nullptr) ? smbiosDev->manufacturer : std::string{};
+    if (isPlaceholder(manufacturer))
+    {
+        manufacturer.clear();
+    }
 
     auto asset = server.add_interface(path, assetIface);
     if (!partNumber.empty())
     {
         asset->register_property("PartNumber", partNumber);
     }
-    if (!info.serialNumber.empty())
+    if (!manufacturer.empty())
     {
-        asset->register_property("SerialNumber", info.serialNumber);
+        asset->register_property("Manufacturer", manufacturer);
+    }
+    if (!serialNumber.empty())
+    {
+        asset->register_property("SerialNumber", serialNumber);
     }
     asset->initialize();
     keepAlive.push_back(asset);
 
-    if (!smbiosLocator.empty())
+    if (locator != i2cLocator)
     {
         auto location = server.add_interface(path, locationCodeIface);
-        location->register_property("LocationCode", smbiosLocator);
+        location->register_property("LocationCode", locator);
         location->initialize();
         keepAlive.push_back(location);
     }
@@ -311,20 +430,13 @@ void publishDimm(sdbusplus::asio::object_server& server,
 }
 
 // Locates the SMBIOS Type 17 entry describing the same module as `info` and
-// marks it claimed, so that the next DIMM cannot take it too.
-//
-// Part number is tried first. It cannot separate the two DIMMs on this board,
-// because they are identical, so the fallback matches on capacity alone and
-// hands the entries out in the order the BIOS emitted them (bank order, i.e.
-// A1 before B1) to the EEPROMs in bus-address order (which is also bank order,
-// since the SPD addresses here run by bank rather than by channel). That keeps
-// the pairing stable and consistent with how the host's own tools associate
-// SPDs with DMI slots.
+// marks it claimed. The page-1 serial is the unique key; part number and
+// capacity are fallbacks for modules whose serial is unavailable.
 const smbios::MemoryDevice* matchMemoryDevice(
     const std::vector<smbios::MemoryDevice>& devices,
     std::vector<bool>& claimed, const dimm::SpdInfo& info)
 {
-    const auto samePart = [](const std::string& a, const std::string& b) {
+    const auto sameText = [](const std::string& a, const std::string& b) {
         if (a.size() != b.size())
         {
             return false;
@@ -335,14 +447,31 @@ const smbios::MemoryDevice* matchMemoryDevice(
         });
     };
 
+    if (!info.serialNumber.empty())
+    {
+        for (size_t i = 0; i < devices.size(); ++i)
+        {
+            if (claimed[i] || isPlaceholder(devices[i].serialNumber))
+            {
+                continue;
+            }
+            if (sameText(info.serialNumber, devices[i].serialNumber))
+            {
+                claimed[i] = true;
+                return &devices[i];
+            }
+        }
+    }
+
     for (size_t i = 0; i < devices.size(); ++i)
     {
         if (claimed[i] || devices[i].capacityMiB != info.capacityMiB)
         {
             continue;
         }
-        if (!info.partNumber.empty() && !devices[i].partNumber.empty() &&
-            samePart(info.partNumber, devices[i].partNumber))
+        if (!isPlaceholder(info.partNumber) &&
+            !isPlaceholder(devices[i].partNumber) &&
+            sameText(info.partNumber, devices[i].partNumber))
         {
             claimed[i] = true;
             return &devices[i];
@@ -463,6 +592,26 @@ void publishAll(sdbusplus::asio::object_server& server,
                   return std::tie(a.bus, a.address) <
                          std::tie(b.bus, b.address);
               });
+
+    // Page 1 holds the module serial. Select it once per bus, read the four
+    // serial bytes from each EEPROM, then restore page 0 for the driver.
+    std::set<uint8_t> serialBuses;
+    for (auto& dev : found)
+    {
+        if (serialBuses.insert(dev.bus).second)
+        {
+            selectSpdPage1(dev.bus);
+        }
+        const std::string serial = readSpdSerial(dev.bus, dev.address);
+        if (!serial.empty())
+        {
+            dev.info.serialNumber = serial;
+        }
+    }
+    for (const auto bus : serialBuses)
+    {
+        selectSpdPage0(bus);
+    }
 
     const auto devices = smbios::readMemoryDevices(smbiosTablePath);
     std::vector<bool> claimed(devices.size(), false);
