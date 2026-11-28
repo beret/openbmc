@@ -13,3 +13,7 @@
 
 DISTRO_FEATURES += "mc12-le0-bringup"
 DISTROOVERRIDES .= ":df-mc12-le0-bringup"
+
+# IPMI request tracing for further OEM protocol discovery. Request-only,
+# redacted; never install in production.
+IMAGE_INSTALL:append = " ami-smbios-trace"
