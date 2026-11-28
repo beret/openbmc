@@ -6,6 +6,8 @@ SANITY_TESTED_DISTROS:append ?= " *"
 # conf/machine/mc12-le0.conf; leave this override commented unless replacing
 # the machine default.
 #EXTRA_IMAGE_FEATURES = "allow-root-login"
+# MC12-LE0 board bring-up/test feature: see
+# meta-gigabyte/meta-mc12-le0/conf/templates/default/local.conf.sample.
 USER_CLASSES ?= "buildstats"
 PATCHRESOLVE = "noop"
 BB_DISKMON_DIRS = "\
