@@ -3,11 +3,13 @@ DISTRO ?= "openbmc-phosphor"
 PACKAGE_CLASSES ?= "package_ipk"
 SANITY_TESTED_DISTROS:append ?= " *"
 # allow-root-login is already set by EXTRA_IMAGE_FEATURES in
-# conf/machine/mc12-le0.conf; leave this override commented unless replacing
-# the machine default.
+# conf/machine/mc12-le0.conf; leave this override commented
+# unless replacing machine default.
 #EXTRA_IMAGE_FEATURES = "allow-root-login"
+
 # MC12-LE0 board bring-up/test profile; not for production.
 #DISTRO = "openbmc-phosphor-mc12-le0-bringup"
+
 USER_CLASSES ?= "buildstats"
 PATCHRESOLVE = "noop"
 BB_DISKMON_DIRS = "\
@@ -22,18 +24,13 @@ BB_DISKMON_DIRS = "\
 CONF_VERSION = "2"
 
 # Shared caches outside the per-machine build tree. Override CACHE_ROOT for the
-# site; the other paths and the hash-equivalence database follow it.
-CACHE_ROOT ?= "${TOPDIR}/../cache"
+# build host; the other paths and the hash-equivalence database inherit it.
+# To keep in working directory: eg. openbmc/build/cache, use "${TOPDIR}/../cache"
+CACHE_ROOT ?= ${XDG_CACHE_HOME:-$HOME/.cache}/bitbake
 DL_DIR ?= "${CACHE_ROOT}/downloads"
 SSTATE_DIR ?= "${CACHE_ROOT}/sstate"
 BB_HASHSERVE_DB_DIR ?= "${SSTATE_DIR}"
-# Remote sstate mirror and upstream hash server are disabled; the shared local
-# SSTATE_DIR is authoritative. Enable only if deliberately consuming Yocto
-# prebuilt artifacts.
-#SSTATE_MIRRORS ?= "file://.* https://sstate.yoctoproject.org/dev/PATH;downloadfilename=PATH"
-
 BB_HASHSERVE = "auto"
-#BB_HASHSERVE_UPSTREAM = "wss://hashserv.yoctoproject.org/ws"
 BB_SIGNATURE_HANDLER = "OEEquivHash"
 
 # Limit concurrent BitBake tasks and make/ninja jobs to reduce cache thrashing

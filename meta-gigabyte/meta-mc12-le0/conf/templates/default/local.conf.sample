@@ -2,11 +2,14 @@ MACHINE ??= "mc12-le0"
 DISTRO ?= "openbmc-phosphor"
 PACKAGE_CLASSES ?= "package_ipk"
 SANITY_TESTED_DISTROS:append ?= " *"
+# allow-root-login is already set by EXTRA_IMAGE_FEATURES in
+# conf/machine/mc12-le0.conf; leave this override commented
+# unless replacing machine default.
 #EXTRA_IMAGE_FEATURES = "allow-root-login"
-# Bring-up/test builds only. Select the tracked board test profile; it enables
-# optional, non-production diagnostics and does not enable root login. Do not
-# ship a bring-up image.
+
+# MC12-LE0 board bring-up/test profile; not for production.
 #DISTRO = "openbmc-phosphor-mc12-le0-bringup"
+
 USER_CLASSES ?= "buildstats"
 PATCHRESOLVE = "noop"
 BB_DISKMON_DIRS = "\
@@ -19,3 +22,23 @@ BB_DISKMON_DIRS = "\
     HALT,${SSTATE_DIR},100M,1K \
     HALT,/tmp,10M,1K"
 CONF_VERSION = "2"
+
+# Shared caches outside the per-machine build tree. Override CACHE_ROOT for the
+# build host; the other paths and the hash-equivalence database inherit it.
+# To keep in working directory: eg. openbmc/build/cache, use "${TOPDIR}/../cache"
+CACHE_ROOT ?= ${XDG_CACHE_HOME:-$HOME/.cache}/bitbake
+DL_DIR ?= "${CACHE_ROOT}/downloads"
+SSTATE_DIR ?= "${CACHE_ROOT}/sstate"
+BB_HASHSERVE_DB_DIR ?= "${SSTATE_DIR}"
+BB_HASHSERVE = "auto"
+BB_SIGNATURE_HANDLER = "OEEquivHash"
+
+# Limit concurrent BitBake tasks and make/ninja jobs to reduce cache thrashing
+# on small hosts. These are defaults; adjust per build host.
+BB_NUMBER_THREADS ?= "12"
+PARALLEL_MAKE ?= "-j 12 -l 16"
+
+# Compiler cache (shared across builds outside TMPDIR).
+INHERIT += "ccache"
+CCACHE_TOP_DIR ?= "${CACHE_ROOT}/ccache"
+CCACHE_NATIVE_RECIPES_ALLOWED = "nodejs-native llvm-native"
