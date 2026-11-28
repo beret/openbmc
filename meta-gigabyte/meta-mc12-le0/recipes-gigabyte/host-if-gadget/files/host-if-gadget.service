@@ -1,0 +1,20 @@
+[Unit]
+Description=USB Ethernet host interface for the BIOS Redfish client
+# Bound once at boot; the kernel keeps the gadget across host reboots. The link
+# address is systemd-networkd's job (70-usb-host-if.network), applied from
+# netdev events, so this unit needs no polling loop.
+ConditionPathIsMountPoint=/sys/kernel/config
+ConditionPathExists=/sys/class/udc/1e6a0000.usb-vhub:p1
+Wants=sys-kernel-config.mount
+After=sys-kernel-config.mount
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/host-if-gadget-setup
+ExecStop=/usr/bin/host-if-gadget-setup stop
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

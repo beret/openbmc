@@ -1,0 +1,15 @@
+# USB link address for the BIOS Redfish client.
+#
+# 60-phosphor-networkd-default.network matches every ethernet device and asks
+# for DHCP. This file sorts after it and overrides that for usb0 only: the link
+# keeps the DMTF USB link-local address the BIOS connects to and never leases
+# an address over a point-to-point USB link.
+[Match]
+Name=usb0
+
+[Network]
+Address=169.254.0.17/16
+DHCP=no
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+ConfigureWithoutCarrier=yes

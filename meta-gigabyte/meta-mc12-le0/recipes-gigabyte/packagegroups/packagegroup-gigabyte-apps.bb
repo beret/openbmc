@@ -27,6 +27,7 @@ RDEPENDS:${PN}-system = " \
         phosphor-power-regulators \
         phosphor-sel-logger \
         entity-manager \
+        host-if-gadget \
         phosphor-pid-control \
         phosphor-software-manager \
         iperf3 \
