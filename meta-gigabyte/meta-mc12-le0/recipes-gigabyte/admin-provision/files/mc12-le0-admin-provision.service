@@ -1,7 +1,7 @@
 [Unit]
 Description=Provision the MC12-LE0 admin password from the FRU serial
-ConditionPathExists=!/var/lib/mc12-le0/admin-provisioned
-After=basic.target
+After=basic.target mc12-le0-admin-account.service xyz.openbmc_project.User.Manager.service
+Wants=mc12-le0-admin-account.service xyz.openbmc_project.User.Manager.service
 
 [Service]
 Type=oneshot

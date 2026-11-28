@@ -1,0 +1,15 @@
+[Unit]
+Description=Ensure the MC12-LE0 admin account and groups exist
+After=local-fs.target systemd-sysusers.service
+Before=xyz.openbmc_project.User.Manager.service
+Before=mc12-le0-admin-provision.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/mc12-le0-admin-provision --ensure-account
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target xyz.openbmc_project.User.Manager.service

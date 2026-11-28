@@ -2,10 +2,19 @@
 #
 # First-boot provisioning for the non-root MC12-LE0 admin account.
 #
+# The early account unit runs this with --ensure-account before
+# xyz.openbmc_project.User.Manager starts, so an upgrade that preserved an
+# old /etc/passwd cannot hide the image's admin account from bmcweb. The same
+# account check is repeated here for manually started or resumed runs.
+#
 # The image ships admin/0penBmc as the initial bmcweb login fallback when no
 # valid serial is available. On first boot, prefer the board serial from Entity
 # Manager when it is a valid 11- or 12-character alphanumeric value. Invalid or
 # missing serial data leaves the fallback.
+#
+# The state file records the image build and only reaches "complete" after the
+# password has been applied and the expiry has been verified. A boot after any
+# failed step reruns provisioning instead of trusting a stale marker.
 #
 # The password is marked expired after this runs. The first login must use
 # bmcweb, which requires changing the password; SSH, Redfish, and the web
@@ -19,10 +28,11 @@ set -u
 
 ADMIN="admin"
 DEFAULT_PASSWORD="0penBmc"
+ADMIN_GROUPS="redfish priv-admin ipmi hostconsole"
 ASSET_PATH=/xyz/openbmc_project/inventory/system/board/Gigabyte_MC12_LE0_00
 ASSET_IFACE=xyz.openbmc_project.Inventory.Decorator.Asset
 STATE_DIR=/var/lib/mc12-le0
-MARKER="${STATE_DIR}/admin-provisioned"
+STATE_FILE="${STATE_DIR}/admin-provisioned"
 
 # shellcheck disable=SC1091
 [ -r /etc/default/admin-provision ] && . /etc/default/admin-provision
@@ -65,15 +75,107 @@ read_serial()
     return 1
 }
 
+groups_csv()
+{
+    printf '%s' "$ADMIN_GROUPS" | tr ' ' ','
+}
+
+ensure_groups()
+{
+    for group in $ADMIN_GROUPS; do
+        grep -q "^${group}:" /etc/group && continue
+        groupadd -r "$group" || return 1
+    done
+}
+
 ensure_admin()
 {
-    id "$ADMIN" >/dev/null 2>&1 && return 0
     [ -n "${ADMIN_FALLBACK_HASH:-}" ] || return 1
+    ensure_groups || return 1
 
-    useradd -m -N -s /bin/sh \
-        -G redfish,priv-admin,ipmi,hostconsole \
-        -p "$ADMIN_FALLBACK_HASH" "$ADMIN"
+    if id "$ADMIN" >/dev/null 2>&1; then
+        usermod -s /bin/sh "$ADMIN" || return 1
+        if [ -n "$ADMIN_GROUPS" ]; then
+            usermod -G "$(groups_csv)" "$ADMIN" || return 1
+        fi
+    else
+        useradd -m -N -s /bin/sh \
+            -G "$(groups_csv)" \
+            -p "$ADMIN_FALLBACK_HASH" "$ADMIN" || return 1
+    fi
+
+    id "$ADMIN" >/dev/null 2>&1
 }
+
+image_id()
+{
+    if [ -r /etc/os-release ]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+    fi
+    printf '%s' "${BUILD_ID:-${VERSION_ID:-unknown}}"
+}
+
+password_expired()
+{
+    field="$(awk -F: '$1 == "admin" { print $3; exit }' /etc/shadow 2>/dev/null)"
+    [ "$field" = "0" ]
+}
+
+dbus_password_expired()
+{
+    value="$(busctl get-property xyz.openbmc_project.User.Manager \
+        "/xyz/openbmc_project/user/$ADMIN" \
+        xyz.openbmc_project.User.Attributes UserPasswordExpired 2>/dev/null)"
+    [ "$value" = "b true" ]
+}
+
+state_is_current()
+{
+    [ -r "$STATE_FILE" ] || return 1
+
+    # shellcheck disable=SC1090
+    . "$STATE_FILE" || return 1
+    [ "${STATE_VERSION:-}" = "1" ] || return 1
+    [ "${STATE_STATE:-}" = "complete" ] || return 1
+    [ "${STATE_IMAGE_ID:-}" = "$(image_id)" ] || return 1
+    [ "${STATE_FORCE_CHANGE:-}" = "$FORCE_CHANGE" ] || return 1
+    id "$ADMIN" >/dev/null 2>&1 || return 1
+    if [ "$FORCE_CHANGE" = "1" ]; then
+        password_expired || return 1
+        dbus_password_expired || return 1
+    fi
+}
+
+write_state()
+{
+    tmp="${STATE_FILE}.tmp.$$"
+
+    (
+        umask 077
+        printf '%s\n' \
+            "STATE_VERSION=1" \
+            "STATE_IMAGE_ID=$(image_id)" \
+            "STATE_STATE=complete" \
+            "STATE_FORCE_CHANGE=$FORCE_CHANGE" \
+            > "$tmp"
+    ) || return 1
+    sync 2>/dev/null || true
+    if ! mv -f "$tmp" "$STATE_FILE"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    chmod 600 "$STATE_FILE"
+    sync 2>/dev/null || true
+}
+
+if [ "${1:-}" = "--ensure-account" ]; then
+    if ! ensure_admin; then
+        log "failed to ensure ${ADMIN} account"
+        exit 1
+    fi
+    exit 0
+fi
 
 set_admin_password()
 {
@@ -85,9 +187,9 @@ set_admin_password()
     fi
 
     log "PAM rejected the FRU serial password; restoring fallback"
-    [ -n "${ADMIN_FALLBACK_HASH:-}" ] || return 1
-    id "$ADMIN" >/dev/null 2>&1 || return 1
-    usermod -p "$ADMIN_FALLBACK_HASH" "$ADMIN" || return 1
+    [ -n "${ADMIN_FALLBACK_HASH:-}" ] || return 2
+    id "$ADMIN" >/dev/null 2>&1 || return 2
+    usermod -p "$ADMIN_FALLBACK_HASH" "$ADMIN" || return 2
     return 1
 }
 
@@ -98,24 +200,54 @@ if ! ensure_admin; then
     exit 1
 fi
 
+if state_is_current; then
+    log "already provisioned for image $(image_id)"
+    exit 0
+fi
+
 serial="$(read_serial || true)"
 if [ -n "${serial:-}" ] && is_valid_serial "$serial"; then
-    if set_admin_password "$serial"; then
+    set_admin_password "$serial"
+    case "$?" in
+    0)
         log "${ADMIN} password set from FRU serial"
-    else
+        ;;
+    1)
         log "keeping ${DEFAULT_PASSWORD} fallback for ${ADMIN}"
-    fi
+        ;;
+    *)
+        log "failed to set or restore the ${ADMIN} password"
+        exit 1
+        ;;
+    esac
 else
     log "FRU serial missing or invalid; keeping ${DEFAULT_PASSWORD} fallback"
 fi
 
 if [ "$FORCE_CHANGE" = "1" ]; then
-    if passwd -e "$ADMIN" >/dev/null 2>&1; then
-        log "${ADMIN} password marked expired"
-    else
-        log "could not mark ${ADMIN} password expired; leaving it usable"
+    if ! passwd -e "$ADMIN" >/dev/null 2>&1; then
+        log "could not mark ${ADMIN} password expired"
+        exit 1
     fi
+    if ! password_expired; then
+        log "${ADMIN} password did not become expired"
+        exit 1
+    fi
+    if ! dbus_password_expired; then
+        log "user manager does not report ${ADMIN} as expired; restarting it"
+        systemctl try-restart xyz.openbmc_project.User.Manager.service \
+            >/dev/null 2>&1 || true
+        sleep 1
+        if ! dbus_password_expired; then
+            log "user manager still does not report ${ADMIN} as expired"
+            exit 1
+        fi
+    fi
+    log "${ADMIN} password marked expired"
 fi
 
-: > "$MARKER"
-chmod 600 "$MARKER"
+if ! write_state; then
+    log "failed to record provisioning state"
+    exit 1
+fi
+log "provisioning complete for image $(image_id)"
